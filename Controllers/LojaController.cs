@@ -106,7 +106,7 @@ namespace AllDelivery.Api.Controllers
                     break;
                 case TipoOrdenacao.OrdemAZ:
                 default:
-                    valores = await Paginar<Loja>.CreateAsync(_context.Lojas.Where(p=> p.Id == 4).OrderBy(p => p.NomeFantasia).Select(p => new Loja
+                    valores = await Paginar<Loja>.CreateAsync(_context.Lojas.OrderBy(p => p.NomeFantasia).Select(p => new Loja
                     {
                         Id = p.Id,
                         NomeRazao = p.NomeRazao,
