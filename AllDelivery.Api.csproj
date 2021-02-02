@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\alldelivery\AllDelivery.Lib\AllDelivery.Lib.csproj" />
+    <ProjectReference Include="..\eletronic-pharma-lib\AllDelivery.Lib.csproj" />
   </ItemGroup>
 
   <ItemGroup>
