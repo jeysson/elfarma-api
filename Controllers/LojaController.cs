@@ -60,6 +60,8 @@ namespace AllDelivery.Api.Controllers
                 case TipoOrdenacao.Distancia:
                     valores = await Paginar<Loja>.CreateAsync(_context.Lojas.OrderBy(p => p.Location.Distance(new Point(lon, lat))).Select(p=> new Loja { 
                         Id = p.Id,
+                        ImgLogo = p.ImgLogo,
+                        ImgBanner = p.ImgBanner,
                         NomeRazao = p.NomeRazao,
                         NomeFantasia = p.NomeFantasia,
                         HAbre = p.HAbre,
@@ -76,6 +78,8 @@ namespace AllDelivery.Api.Controllers
                     valores = await Paginar<Loja>.CreateAsync(_context.Lojas.OrderBy(p => p.TempoMinimo).Select(p => new Loja
                     {
                         Id = p.Id,
+                        ImgLogo = p.ImgLogo,
+                        ImgBanner = p.ImgBanner,
                         NomeRazao = p.NomeRazao,
                         NomeFantasia = p.NomeFantasia,
                         HAbre = p.HAbre,
@@ -92,6 +96,8 @@ namespace AllDelivery.Api.Controllers
                     valores = await Paginar<Loja>.CreateAsync(_context.Lojas.OrderBy(p => p.TaxaEntrega).Select(p => new Loja
                     {
                         Id = p.Id,
+                        ImgLogo = p.ImgLogo,
+                        ImgBanner = p.ImgBanner,
                         NomeRazao = p.NomeRazao,
                         NomeFantasia = p.NomeFantasia,
                         HAbre = p.HAbre,
@@ -109,6 +115,8 @@ namespace AllDelivery.Api.Controllers
                     valores = await Paginar<Loja>.CreateAsync(_context.Lojas.OrderBy(p => p.NomeFantasia).Select(p => new Loja
                     {
                         Id = p.Id,
+                        ImgLogo = p.ImgLogo,
+                        ImgBanner = p.ImgBanner,
                         NomeRazao = p.NomeRazao,
                         NomeFantasia = p.NomeFantasia,
                         HAbre = p.HAbre,

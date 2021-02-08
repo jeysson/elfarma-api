@@ -33,7 +33,7 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpGet("produtosgrupo")]
-        public IEnumerable<Produto> produtosgrupo(int loja, int grupo)
+        public IEnumerable<Produto> ProdutosGrupo(int loja, int grupo)
         {
             return _context.Produtos.Include(p => p.GrupoProdutos).ThenInclude(p => p.Grupo).Where(p => p.GrupoProdutos.Count(z=> z.GrupoId == grupo) > 0 && p.Loja.Id == loja);
         }
@@ -53,6 +53,13 @@ namespace AllDelivery.Api.Controllers
                 return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja), indice, tamanho);
             else
             return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p=> p.Loja.Id == loja && p.GrupoProdutos.Count(p=> p.GrupoId == grupo )> 0),  indice, tamanho);
+        }
+
+        [HttpGet("buscar")]
+        public async Task<Paginar<Produto>> Buscar(string nomeproduto, int loja, int indice, int tamanho)
+        {
+            return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja &&
+            (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))), indice, tamanho);
         }
     }
 }

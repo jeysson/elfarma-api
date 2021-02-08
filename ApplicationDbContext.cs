@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using AllDelivery.Lib;
 using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.Extensions.Logging;
 
 namespace AllDelivery.Api
 {
@@ -17,6 +18,13 @@ namespace AllDelivery.Api
         {
         }
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            //var lf = new LoggerFactory();
+            //lf.AddProvider(new MyLoggerProvider());
+            //optionsBuilder.UseLoggerFactory(lf);
+            //optionsBuilder.EnableSensitiveDataLogging();
+        }
 
         public DbSet<Loja> Lojas { get; set; }
 
