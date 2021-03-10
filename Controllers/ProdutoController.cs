@@ -27,9 +27,21 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpGet("grupos")]
-        public IEnumerable<Grupo> Grupo(int loja)
+        public IEnumerable<dynamic> Grupo(int loja)
         {
-            return _context.Grupos.Include(p=> p.GrupoProdutos).Where(p => p.GrupoProdutos.Count > 0 && p.Loja.Id == loja);
+            return _context.Grupos.Include(p => p.GrupoProdutos)
+                .ThenInclude(p => p.Produto)
+                .Where(p => p.GrupoProdutos.Count > 0 && p.Loja.Id == loja)
+                .Select(p => new
+                {
+                    Id = p.Id
+                ,
+                    Nome = p.Nome
+                ,
+                    Ordem = p.Ordem
+                ,
+                    Products = p.GrupoProdutos.Select(q => q.Produto)
+                });
         }
 
         [HttpGet("produtosgrupo")]
@@ -39,9 +51,9 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpGet("imagens")]
-        public IEnumerable<ProdutoFoto> Imagens(int produto)
+        public IEnumerable<ProdutoFoto> Imagens(int grupo)
         {
-            var list = _context.ProdutoFotos.Where(p => p.ProdutoId == produto).ToList();
+            var list = _context.ProdutoFotos.Include(p=> p.Produto).Where(p => p.Produto.GrupoProdutos.First().GrupoId == grupo).ToList();
             list.ForEach(o=> { o.FotoBase64 = Convert.ToBase64String(o.Foto); });
             return list;
         }
@@ -60,6 +72,19 @@ namespace AllDelivery.Api.Controllers
         {
             return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja &&
             (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))), indice, tamanho);
+        }
+
+        [HttpGet("imagensgrupo")]
+        public IActionResult ImagensGrupo(int grupo)
+        {
+            var list = _context.GrupoProdutos
+                                .Include(p => p.Produto)
+                                .ThenInclude(p=> p.ProdutoFotos)
+                                .Where(p => p.GrupoId == grupo)
+                                .SelectMany(p=> p.Produto.ProdutoFotos).ToList();
+
+            list.ForEach(o => { o.FotoBase64 = Convert.ToBase64String(o.Foto); });
+            return Ok(list);
         }
     }
 }

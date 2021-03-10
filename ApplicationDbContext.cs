@@ -36,6 +36,14 @@ namespace AllDelivery.Api
 
         public DbSet<ProdutoFoto> ProdutoFotos { get; set; }
 
+        public DbSet<Pedido> Pedidos { get; set; }
+
+        public DbSet<PedidoItem> PedidoItens { get; set; }
+
+        public DbSet<FormaPagamento> FormaPagamentos { get; set; }
+
+        public DbSet<LojaFormaPagamento> LojaFormaPagamentos { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<GrupoProduto>()
@@ -43,6 +51,9 @@ namespace AllDelivery.Api
 
             modelBuilder.Entity<ProdutoFoto>()
                 .HasKey(c => new { c.ProdutoId, c.Seq });
+
+            modelBuilder.Entity<LojaFormaPagamento>()
+                .HasKey(c => new { c.LojaId, c.FormaPagamentoId });
         }
     }
 }
