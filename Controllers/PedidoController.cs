@@ -89,5 +89,36 @@ namespace AllDelivery.Api.Controllers
 
             return Ok(mensageiro);
         }
+
+        [HttpGet("obterhistorico")]
+        public IActionResult ObterHistorico(uint codUser)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                mensageiro.Dados = _context.Pedidos
+                    .Where(p => p.UsuarioId == codUser)
+                     .Include(p => p.Loja)
+                    .Include(p => p.Itens)
+                    .ThenInclude(p => p.Produto)
+                    .Select(p => new
+                    {
+                        Id = p.Id,
+                        Loja = p.Loja.NomeFantasia,
+                        Logo = p.Loja.ImgLogo,
+                        Data = p.Data,
+                        NomeItem = p.Itens.First().Produto.Nome,
+                        Quantidade = p.Itens.Count
+                    });
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = "Falha na operação!";
+            }
+
+            return Ok(mensageiro);
+        }
     }
 }
