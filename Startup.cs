@@ -33,7 +33,9 @@ namespace AllDelivery.Api
                     new MySqlServerVersion(new Version(5,6)),
                     x => { x.UseNetTopologySuite(); x.CharSetBehavior(CharSetBehavior.NeverAppend); }));
             //
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(options => {
+                options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

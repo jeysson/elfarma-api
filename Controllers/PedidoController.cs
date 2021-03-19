@@ -91,25 +91,30 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpGet("obterhistorico")]
-        public IActionResult ObterHistorico(uint codUser)
+        public async Task<Mensageiro> ObterHistorico(uint codUser, int indice, int tamanho)
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
-                mensageiro.Dados = _context.Pedidos
+
+                var page =await Paginar<Pedido>.CreateAsync( _context.Pedidos
                     .Where(p => p.UsuarioId == codUser)
                      .Include(p => p.Loja)
                     .Include(p => p.Itens)
-                    .ThenInclude(p => p.Produto)
-                    .Select(p => new
-                    {
-                        Id = p.Id,
-                        Loja = p.Loja.NomeFantasia,
-                        Logo = p.Loja.ImgLogo,
-                        Data = p.Data,
-                        NomeItem = p.Itens.First().Produto.Nome,
-                        Quantidade = p.Itens.Count
-                    });
+                    .ThenInclude(p => p.Produto)                    
+                    , indice, tamanho);
+
+                object list = new Paginar<Object>(page.Select(p => new 
+                {
+                    Id = p.Id,
+                    Loja = p.Loja.NomeFantasia,
+                    Logo = p.Loja.ImgLogo,
+                    Data = p.Data,
+                    NomeItem = p.Itens.First().Produto.Nome,
+                    Quantidade = p.Itens.Count
+                }).ToList<object>(), page.Count, indice, tamanho);
+
+                mensageiro.Dados = list;
             }
             catch (Exception ex)
             {
@@ -118,7 +123,7 @@ namespace AllDelivery.Api.Controllers
                 mensageiro.Mensagem = "Falha na operação!";
             }
 
-            return Ok(mensageiro);
+            return mensageiro;
         }
     }
 }
