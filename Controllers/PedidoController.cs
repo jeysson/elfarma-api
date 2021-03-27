@@ -27,9 +27,6 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
-                var loja = pedido.Loja;
-                var fp = pedido.FormaPagamento;
-
                 _context.Database.BeginTransaction();
                 pedido.Data = DateTime.UtcNow;
                 pedido.StatusId = 1;
@@ -49,11 +46,9 @@ namespace AllDelivery.Api.Controllers
                 _context.Pedidos.Add(pedido);
                 _context.SaveChanges();
                 _context.Database.CommitTransaction();
+               
                 //
-                pedido.FormaPagamento = fp;
-                pedido.Loja = loja;
-                //
-                mensageiro.Dados = pedido;
+                mensageiro.Dados = pedido.Id;
 
             }catch(Exception ex)
             {
@@ -70,15 +65,15 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpGet("obter")]
-        public IActionResult Obter(uint idpedido)
+        public IActionResult Obter(uint idPedido)
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
-            {                
-                mensageiro.Dados = _context.Pedidos.Include(p=> p.Itens).ThenInclude(p=> p.Produto)
-                                                    .Include(p => p.FormaPagamento)
-                                                    .Include(p => p.Loja)
-                                                    .FirstOrDefault(p=> p.Id == idpedido);
+            {
+                mensageiro.Dados = _context.Pedidos.Where(p => p.Id == idPedido)
+                     .Include(p => p.Itens).ThenInclude(p => p.Produto)
+                                                     .Include(p => p.FormaPagamento)
+                                                     .Include(p => p.Loja).FirstOrDefault();
             }
             catch (Exception ex)
             {
@@ -97,21 +92,25 @@ namespace AllDelivery.Api.Controllers
             try
             {
 
-                var page =await Paginar<Pedido>.CreateAsync( _context.Pedidos
+                var page = await Paginar<Pedido>.CreateAsync(_context.Pedidos
                     .Where(p => p.UsuarioId == codUser)
                      .Include(p => p.Loja)
                     .Include(p => p.Itens)
-                    .ThenInclude(p => p.Produto)                    
+                    .ThenInclude(p => p.Produto)
+                    .OrderByDescending(p => p.Data)
+                    .ThenBy(p => p.StatusId)
                     , indice, tamanho);
 
-                object list = new Paginar<Object>(page.Select(p => new 
+                object list = new Paginar<Object>(page.Select(p => new
                 {
                     Id = p.Id,
                     Loja = p.Loja.NomeFantasia,
                     Logo = p.Loja.ImgLogo,
                     Data = p.Data,
                     NomeItem = p.Itens.First().Produto.Nome,
-                    Quantidade = p.Itens.Count
+                    QuantidadeItem = p.Itens.First().Quantidade,
+                    Quantidade = p.Itens.Count,
+                    Status = p.StatusId
                 }).ToList<object>(), page.Count, indice, tamanho);
 
                 mensageiro.Dados = list;

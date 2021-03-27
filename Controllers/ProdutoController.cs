@@ -54,7 +54,7 @@ namespace AllDelivery.Api.Controllers
         public IEnumerable<ProdutoFoto> Imagens(int grupo)
         {
             var list = _context.ProdutoFotos.Include(p=> p.Produto).Where(p => p.Produto.GrupoProdutos.First().GrupoId == grupo).ToList();
-            list.ForEach(o=> { o.FotoBase64 = Convert.ToBase64String(o.Foto); });
+           // list.ForEach(o=> { o.FotoBase64 = Convert.ToBase64String(o.Foto); });
             return list;
         }
 
@@ -67,11 +67,25 @@ namespace AllDelivery.Api.Controllers
             return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p=> p.Loja.Id == loja && p.GrupoProdutos.Count(p=> p.GrupoId == grupo )> 0),  indice, tamanho);
         }
 
-        [HttpGet("buscar")]
-        public async Task<Paginar<Produto>> Buscar(string nomeproduto, int loja, int indice, int tamanho)
+        [HttpGet("buscarporloja")]
+        public async Task<Paginar<Produto>> BuscarPorLoja(int loja, string nomeproduto, int indice, int tamanho)
         {
-            return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja &&
-            (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))), indice, tamanho);
+            if (!string.IsNullOrEmpty(nomeproduto))
+            {
+                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja &&
+                (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))), indice, tamanho);
+            }
+            else {
+                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja), indice, tamanho);
+            }
+        }
+
+        [HttpGet("buscar")]
+        public async Task<Paginar<Produto>> Buscar(string nomeproduto, int indice, int tamanho)
+        {
+            return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) ||
+             p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))
+                .Include(p => p.Loja).Include(p => p.ProdutoFotos).OrderBy(p => p.Preco), indice, tamanho);
         }
 
         [HttpGet("imagensgrupo")]
@@ -83,7 +97,7 @@ namespace AllDelivery.Api.Controllers
                                 .Where(p => p.GrupoId == grupo)
                                 .SelectMany(p=> p.Produto.ProdutoFotos).ToList();
 
-            list.ForEach(o => { o.FotoBase64 = Convert.ToBase64String(o.Foto); });
+           // list.ForEach(o => { o.FotoBase64 = Convert.ToBase64String(o.Foto); });
             return Ok(list);
         }
     }
