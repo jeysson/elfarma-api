@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "el-farma",
+  "private_key_id": "0385beaec1580d409f8da9140a3e9a5cec7a24e2",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC9N9vp4DqoNbhR\nxBC2aE4pJXgFU0dW/ZvURVD567IDCB5eH1j6Yd6qrPtLgYpvOXVspIsnTjOPcj4Q\nxZYEKXdFV9yTl73XFnHLUyENItnlAcbuiedqV3JCtyGhlEBubhfvwOJySxHWIacg\np2evKKEpdPAPipvc4zBpLpHlKUZdNo9vdmaiSSqg+m1itIH+Clf36G66KXluHX+6\nxyjQn/UP8b+1sdaDMBE3MHNz5sxYiKH99jxwmLSMb9juiE3Mk9E5wIEEYLI3QmwV\ncoCuJrACg+xsCOcWcRqeDfoAH4X8R6jtU9vn0HuYCia5FQcH4q0AjXASrJNOW00F\nCk0rmQjhAgMBAAECggEADWRLsIofJ1KOALN4tKrohT79TJsv8bcx9TG8C8QjrX/r\nQ6FtAbjgMoIwUuVl2n4IPS/ewrcP18zabwNyR58hAuEMtSFzMoAzKOnG7WVpuIHf\nW3iaeUtGb0muG//LGPBlH0yDz6+tISjxPtK6TYpO8F6HXazjX8cbNlvbwDVN9pYg\n4xmyJDzifLisHAwZMtflmSzMx8dhstRiS+jqdE8IWaRYIgSzOkcoJaLIAEileC5K\nzIEibm4DAItbX5VGVKdWvaw+VRdbznd9SUPgHaARHYMmU+E/JNMzaq6rIsN24J5h\nA4GGykIX1yad6/TxoE4v2HIehBEigA1fJqV5rMuQJQKBgQD6KwXC5ZHlN8Rxm30Z\nFmOqJhaxz/BK3zukE+1tCHcWDMK/Ja6TGuD2OAspf3kdGzwHJ9HsZcxsvo4wgkBQ\nzBsHbQydIGzp9dikve41u90Xw3tgknUE65mOUDpnEktD6l4iRv2JLv7UBdAVl/KN\niBnqwBfh9ZrNfMDhGJ4jh01/NwKBgQDBoRgPpEOomEM9LZYpSjNlEoBCHfdigDJS\nQxaJB4e/PVrM6114fDZRr2pMmbY9OMlgkJEGyhHfWY2fgOfd1zAYwrtuzylvS5bK\n2dXKabHsH/bDy3jRzt9oqAGBASZsHzMLPwruvm/GX5cd9SKufQQ6s5eXq4DJyEOv\nWVsXLJtUpwKBgCAJrHY2QkXxq2XFPPMei+r5b8Sb1bEw/4lWx/xDrkSTo8kpAT9z\nnMXLjZpl6dPRbhGYhujYbKKskLcjpyrxyLBdxdTFl00rH/CRJlWZVoo5ja5jczsL\nFSJFogUbMapj9GQ9ZTDRZO8wQ2LQj86SVIdczHIyqv2P8X+iUHZKWKFnAoGAB3FA\nsoE21IkdtIFHD0k51n2yjlgGhTO2O3E2sYenkRMzpUK6sgHcOKGMbWtPFOVU4DBO\nUrt7mmEfz2yt/NnjkGATwjuWNR/rqNpcnE4Zt6C25GmyuCXCcoxamnHH30oHtTv0\nGJ8bPr232j/s2FYXzoXOotbFuXvIFjpSBP8C7WsCgYB6RA22WADCg6I0h14aV+LC\nESmd7nFiq23TRwCqQF4hZA3IMhDrYCmCcss9w4vcfLC7uxzR/dkm90C/c37PhTxP\nFQtyO+Hqc8Zb2zOiqFimXPLEcymDJiXr8hKzGG0c5VzRuks2iKw1CwCDSoSdByad\nEdsVZylRU1aeOYH9zTiJ9A==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-19lc9@el-farma.iam.gserviceaccount.com",
+  "client_id": "104224760548946072916",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-19lc9%40el-farma.iam.gserviceaccount.com"
+}

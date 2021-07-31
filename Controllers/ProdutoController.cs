@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AllDelivery.Lib;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace AllDelivery.Api.Controllers
 {
     [ApiController]
+    [Authorize("Bearer")]    
     [Route("api/[controller]")]
     public class ProdutoController : ControllerBase
     {

@@ -44,6 +44,8 @@ namespace AllDelivery.Api
 
         public DbSet<LojaFormaPagamento> LojaFormaPagamentos { get; set; }
 
+        public DbSet<Usuario> Usuarios { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<GrupoProduto>()

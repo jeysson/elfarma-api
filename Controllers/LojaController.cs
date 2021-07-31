@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AllDelivery.Lib;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,7 @@ using NetTopologySuite.Geometries;
 namespace AllDelivery.Api.Controllers
 {
     [ApiController]
+    [Authorize("Bearer")]
     [Route("api/[controller]")]
     public class LojaController : ControllerBase
     {
@@ -72,7 +74,8 @@ namespace AllDelivery.Api.Controllers
                         TempoMinimo = p.TempoMinimo,
                         Disponivel = p.Disponivel,
                         Ativo = p.Ativo,
-                        Distancia = string.Format("{0:n2} km", p.Location.Distance(new Point(lon, lat))/1000)
+                        Distancia = string.Format("{0:n2} km", p.Location.Distance(new Point(lon, lat))/1000),
+                        PedidoMinimo = p.PedidoMinimo
                     } ), indice, tamanho);
                     break;
                 case TipoOrdenacao.TempoEntrega:
@@ -90,7 +93,8 @@ namespace AllDelivery.Api.Controllers
                         TempoMinimo = p.TempoMinimo,
                         Disponivel = p.Disponivel,
                         Ativo = p.Ativo,
-                        Distancia = string.Format("{0:n2} km", p.Location.Distance(new Point(lon, lat)) / 1000)
+                        Distancia = string.Format("{0:n2} km", p.Location.Distance(new Point(lon, lat)) / 1000),
+                        PedidoMinimo = p.PedidoMinimo
                     }), indice, tamanho);
                     break;
                 case TipoOrdenacao.TaxaEntrega:
@@ -108,7 +112,8 @@ namespace AllDelivery.Api.Controllers
                         TempoMinimo = p.TempoMinimo,
                         Disponivel = p.Disponivel,
                         Ativo = p.Ativo,
-                        Distancia = string.Format("{0:n2} km", p.Location.Distance(new Point(lon, lat)) / 1000)
+                        Distancia = string.Format("{0:n2} km", p.Location.Distance(new Point(lon, lat)) / 1000),
+                        PedidoMinimo = p.PedidoMinimo
                     }), indice, tamanho);
                     break;
                 case TipoOrdenacao.OrdemAZ:
@@ -127,7 +132,8 @@ namespace AllDelivery.Api.Controllers
                         TempoMinimo = p.TempoMinimo,
                         Disponivel = p.Disponivel,
                         Ativo = p.Ativo,
-                        Distancia = string.Format("{0:n2} km", p.Location.Distance(new Point(lon, lat)) / 1000)
+                        Distancia = string.Format("{0:n2} km", p.Location.Distance(new Point(lon, lat)) / 1000),
+                        PedidoMinimo = p.PedidoMinimo
                     }), indice, tamanho);
                     break;
             }
