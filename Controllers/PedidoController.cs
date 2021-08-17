@@ -136,5 +136,29 @@ namespace AllDelivery.Api.Controllers
 
             return mensageiro;
         }
+
+        [HttpGet("obteravaliacaopendente")]
+        public async Task<Mensageiro> ObterAvaliacaoPendente(int codUser)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                var dt = DateTime.Now.AddDays(-16);
+
+                var list = _context.Pedidos.Include(p => p.Loja).Where(p => p.UsuarioId == codUser
+                                                              && p.Data.Value.Date > dt.Date
+                                                              && !_context.PedidoAvaliacoes.Any(q => q.PedidoId == p.Id));
+
+                mensageiro.Dados = list;
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = "Falha na operação!";
+            }
+
+            return mensageiro;
+        }
     }
 }
