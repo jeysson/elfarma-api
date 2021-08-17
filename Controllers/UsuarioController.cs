@@ -37,7 +37,7 @@ namespace AllDelivery.Api.Controllers
         [AllowAnonymous]
         [HttpPost("autenticar")]
         public async Task<IActionResult> Autenticar(Login login)
-        {            
+        {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
@@ -45,62 +45,86 @@ namespace AllDelivery.Api.Controllers
 
                 await FirebaseMessaging.DefaultInstance.SendAsync(new Message { Token = login.TokenFCM }, true);
 
-                var _usuario = _context.Usuarios.FirstOrDefault(p => p.Email == login.Email);
-
+                var _usuario = _context.Usuarios.FirstOrDefault(p => p.Email == login.Email || p.TokenFCM == login.TokenFCM);
+                //
                 if (_usuario != null)
                 {
-                    if(_usuario.TokenFCM != login.TokenFCM) {
+                    _usuario.Anonimo = false;
+
+                    if (string.IsNullOrEmpty(_usuario.Email))
+                        _usuario.Email = login.Email;
+
+                    if (_usuario.TokenFCM != login.TokenFCM)
+                    {
                         _usuario.TokenFCM = login.TokenFCM;
                     }
 
-                    if (_passwordHasher.Check(_usuario.Senha, login.Senha))
-                    {
-                        ClaimsIdentity identity = new ClaimsIdentity(
-                                                   new GenericIdentity(_usuario.Id.ToString(), "Login"),
-                                                   new[] {
+                    /*  if (_passwordHasher.Check(_usuario.Senha, login.Senha))
+                      {*/
+                    ClaimsIdentity identity = new ClaimsIdentity(
+                                               new GenericIdentity(_usuario.Id.ToString(), "Login"),
+                                               new[] {
                                              new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
                                              new Claim(JwtRegisteredClaimNames.UniqueName, _usuario.Id.ToString())
-                                                   }
-                                               );
-                        //
-                        ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(identity);
-                        HttpContext.User = claimsPrincipal;
-                        //
-                        _usuario.TokenCreate = DateTime.Now;
-                        _usuario.TokenExpiration = _usuario.TokenCreate + TimeSpan.FromSeconds(_tokenConfigurations.Seconds);
-
-                        var handler = new JwtSecurityTokenHandler();
-                        var securityToken = handler.CreateToken(new SecurityTokenDescriptor
-                        {
-                            Issuer = _tokenConfigurations.Issuer,
-                            Audience = _tokenConfigurations.Audience,
-                            SigningCredentials = _signingConfigurations.SigningCredentials,
-                            Subject = identity,
-                            NotBefore = _usuario.TokenCreate,
-                            Expires = _usuario.TokenExpiration
-                        });
-                        //Cria o token de acesso
-                        _usuario.Token = handler.WriteToken(securityToken);
-                        _usuario.DataUltimoLogin = DateTime.Now;
-                        //salva o token de acesso
-                        _context.Attach(_usuario);
-                        _context.Entry<Usuario>(_usuario).Property(c => c.TokenCreate).IsModified = true;
-                        _context.Entry<Usuario>(_usuario).Property(c => c.TokenExpiration).IsModified = true;
-                        _context.Entry<Usuario>(_usuario).Property(c => c.Token).IsModified = true;
-                        _context.Entry<Usuario>(_usuario).Property(c => c.DataUltimoLogin).IsModified = true;
-                        _context.Entry<Usuario>(_usuario).Property(c => c.TokenFCM).IsModified = true;
-                        _context.SaveChanges();
-                        //
-                        mensageiro.Dados = _usuario;
-                    }
-                    else
+                                               }
+                                           );
+                    //
+                    ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(identity);
+                    HttpContext.User = claimsPrincipal;
+                    //
+                    if (!string.IsNullOrEmpty(login.Nome) && (_usuario.Nome == "Guest" || string.IsNullOrEmpty(_usuario.Nome)))
                     {
-                        mensageiro.Mensagem = "Usuário ou senha inválido!";
+                        _usuario.Nome = login.Nome;
+
                     }
-                    _context.Database.CommitTransaction();
+
+                    if (!string.IsNullOrEmpty(login.Sobrenome) && (_usuario.Sobrenome == " " || string.IsNullOrEmpty(_usuario.Sobrenome)))
+                    {
+
+                        _usuario.Sobrenome = login.Sobrenome;
+                    }
+                    //
+                    _usuario.TokenCreate = DateTime.Now;
+                    _usuario.TokenExpiration = _usuario.TokenCreate + TimeSpan.FromSeconds(_tokenConfigurations.Seconds);
+
+                    var handler = new JwtSecurityTokenHandler();
+                    var securityToken = handler.CreateToken(new SecurityTokenDescriptor
+                    {
+                        Issuer = _tokenConfigurations.Issuer,
+                        Audience = _tokenConfigurations.Audience,
+                        SigningCredentials = _signingConfigurations.SigningCredentials,
+                        Subject = identity,
+                        NotBefore = _usuario.TokenCreate,
+                        Expires = _usuario.TokenExpiration
+                    });
+                    //Cria o token de acesso
+                    _usuario.Token = handler.WriteToken(securityToken);
+                    _usuario.DataUltimoLogin = DateTime.Now;
+                    //salva o token de acesso
+                    _context.Attach(_usuario);
+                    _context.Entry<Usuario>(_usuario).Property(c => c.TokenCreate).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(c => c.TokenExpiration).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(c => c.Token).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(c => c.DataUltimoLogin).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(c => c.TokenFCM).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(c => c.Anonimo).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(c => c.Nome).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(c => c.Sobrenome).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(c => c.Email).IsModified = true;
+                    //
+
+                    _context.SaveChanges();
+                    //
+                    mensageiro.Dados = _usuario;
                 }
                 else
-                    mensageiro.Mensagem = "Usuário ou senha inválido!";                
+                {
+                    mensageiro.Mensagem = "Usuário ou senha inválido!";
+                }
+                _context.Database.CommitTransaction();
+                /*}
+                else
+                    mensageiro.Mensagem = "Usuário ou senha inválido!";   */
             }
             catch (Exception ex)
             {

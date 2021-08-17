@@ -25,7 +25,9 @@ namespace AllDelivery.Api.Controllers
         [HttpGet("todos")]
         public IEnumerable<Produto> Todos(int loja)
         {
-            return _context.Produtos.Include(p=> p.GrupoProdutos).ThenInclude(p=> p.Grupo).Where(p => p.GrupoProdutos.Count > 0 && p.Ativo && p.Loja.Id == loja);
+            return _context.Produtos.Include(p=> p.GrupoProdutos)
+                .ThenInclude(p=> p.Grupo)
+                .Where(p => p.GrupoProdutos.Count > 0 && p.Ativo && p.Loja.Id == loja);
         }
 
         [HttpGet("grupos")]
@@ -33,7 +35,7 @@ namespace AllDelivery.Api.Controllers
         {
             return _context.Grupos.Include(p => p.GrupoProdutos)
                 .ThenInclude(p => p.Produto)
-                .Where(p => p.GrupoProdutos.Count > 0 && p.Loja.Id == loja)
+                .Where(p => p.GrupoProdutos.Count(p=> p.Produto.Ativo) > 0 && p.Loja.Id == loja && p.Ativo)
                 .Select(p => new
                 {
                     Id = p.Id
@@ -42,21 +44,25 @@ namespace AllDelivery.Api.Controllers
                 ,
                     Ordem = p.Ordem
                 ,
-                    Products = p.GrupoProdutos.Select(q => q.Produto)
+                    Products = p.GrupoProdutos.Where(p=> p.Produto.Ativo).Select(q => q.Produto)
                 });
         }
 
         [HttpGet("produtosgrupo")]
         public IEnumerable<Produto> ProdutosGrupo(int loja, int grupo)
         {
-            return _context.Produtos.Include(p => p.GrupoProdutos).ThenInclude(p => p.Grupo).Where(p => p.GrupoProdutos.Count(z=> z.GrupoId == grupo) > 0 && p.Loja.Id == loja);
+            return _context.Produtos.Include(p => p.GrupoProdutos)
+                .ThenInclude(p => p.Grupo)
+                .Where(p => p.GrupoProdutos.Where(p=> p.Produto.Ativo)
+                                           .Count(z=> z.GrupoId == grupo) > 0 && p.Loja.Id == loja);
         }
 
         [HttpGet("imagens")]
         public IEnumerable<ProdutoFoto> Imagens(int grupo)
         {
-            var list = _context.ProdutoFotos.Include(p=> p.Produto).Where(p => p.Produto.GrupoProdutos.First().GrupoId == grupo).ToList();
-           // list.ForEach(o=> { o.FotoBase64 = Convert.ToBase64String(o.Foto); });
+            var list = _context.ProdutoFotos.Include(p=> p.Produto)
+                                            .Where(p => p.Produto.GrupoProdutos.Where(p=> p.Produto.Ativo).First().GrupoId == grupo).ToList();
+           
             return list;
         }
 
@@ -64,9 +70,9 @@ namespace AllDelivery.Api.Controllers
         public async Task<Paginar<Produto>> Paginar(int loja, int grupo, int indice, int tamanho)
         {
             if(grupo == -1)
-                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja), indice, tamanho);
+                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja && p.Ativo), indice, tamanho);
             else
-            return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p=> p.Loja.Id == loja && p.GrupoProdutos.Count(p=> p.GrupoId == grupo )> 0),  indice, tamanho);
+            return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p=> p.Ativo && p.Loja.Id == loja && p.GrupoProdutos.Count(p=> p.GrupoId == grupo )> 0),  indice, tamanho);
         }
 
         [HttpGet("buscarporloja")]
@@ -74,18 +80,18 @@ namespace AllDelivery.Api.Controllers
         {
             if (!string.IsNullOrEmpty(nomeproduto))
             {
-                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja &&
-                (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))), indice, tamanho);
+                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja &&
+                (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))).Include(p=> p.ProdutoFotos), indice, tamanho);
             }
             else {
-                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja), indice, tamanho);
+                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja).Include(p=> p.ProdutoFotos), indice, tamanho);
             }
         }
 
         [HttpGet("buscar")]
         public async Task<Paginar<Produto>> Buscar(string nomeproduto, int indice, int tamanho)
         {
-            return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) ||
+            return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) ||
              p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))
                 .Include(p => p.Loja).Include(p => p.ProdutoFotos).OrderBy(p => p.Preco), indice, tamanho);
         }
@@ -96,10 +102,9 @@ namespace AllDelivery.Api.Controllers
             var list = _context.GrupoProdutos
                                 .Include(p => p.Produto)
                                 .ThenInclude(p=> p.ProdutoFotos)
-                                .Where(p => p.GrupoId == grupo)
+                                .Where(p => p.Produto.Ativo && p.GrupoId == grupo)
                                 .SelectMany(p=> p.Produto.ProdutoFotos).ToList();
-
-           // list.ForEach(o => { o.FotoBase64 = Convert.ToBase64String(o.Foto); });
+            //
             return Ok(list);
         }
     }

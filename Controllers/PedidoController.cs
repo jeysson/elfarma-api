@@ -72,10 +72,20 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
-                mensageiro.Dados = _context.Pedidos.Where(p => p.Id == idPedido)
+                var pedido = _context.Pedidos.Where(p => p.Id == idPedido)
                      .Include(p => p.Itens).ThenInclude(p => p.Produto)
                                                      .Include(p => p.FormaPagamento)
                                                      .Include(p => p.Loja).FirstOrDefault();
+                pedido.HistStatus = _context.HistoricoPedidos.Include(p => p.Status).Where(p => p.Pedido.Id == idPedido)
+                                                                .Select(p => new StatusPedido
+                                                                {
+                                                                    Ativo = p.Status.Ativo,
+                                                                    Descricao = p.Status.Descricao,
+                                                                    Id = p.Status.Id,
+                                                                    Nome = p.Status.Nome,
+                                                                    Sequencia = p.Status.Sequencia
+                                                                }).OrderByDescending(p=> p.Id).ToList();
+                mensageiro.Dados = pedido;
             }
             catch (Exception ex)
             {

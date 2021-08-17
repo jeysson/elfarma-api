@@ -40,11 +40,15 @@ namespace AllDelivery.Api
 
         public DbSet<PedidoItem> PedidoItens { get; set; }
 
+        public DbSet<HistoricoPedido> HistoricoPedidos { get; set; }
+
         public DbSet<FormaPagamento> FormaPagamentos { get; set; }
 
         public DbSet<LojaFormaPagamento> LojaFormaPagamentos { get; set; }
 
         public DbSet<Usuario> Usuarios { get; set; }
+
+        public DbSet<StatusPedido> StatusPedidos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
