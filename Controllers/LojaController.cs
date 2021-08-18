@@ -23,6 +23,90 @@ namespace AllDelivery.Api.Controllers
             _context = context;
         }
 
+        [HttpGet("obterloja")]
+        public async Task<IActionResult> ObterLoja(uint loja) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try 
+            {
+                mensageiro.Dados = _context.Lojas.FirstOrDefault(p => p.Id == loja);
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+                _context.Database.RollbackTransaction();
+            }
+
+            return Ok(mensageiro);
+        }
+
+        [HttpPost("cadastrar")]
+        public async Task<IActionResult> Cadastrar(Loja loja) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200 ,"Loja cadastrada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                _context.Lojas.Add(loja);
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = "Falha ao cadastrar a loja!";
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpDelete("excluir")]
+        public async Task<IActionResult> Excluir(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200 ,"Loja excluída com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                var cc = _context.Lojas.Local.FirstOrDefault(p => p.Id == loja);
+                if (cc != null)
+                    _context.Entry<Loja>(cc).State = EntityState.Detached;
+                _context.Lojas.Remove(cc);
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = "Falha ao excluir a loja!";
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpPut("atualizar")]
+        public async Task<IActionResult> Atualizar(Loja loja) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Loja atualizado com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                var cc = _context.Lojas.Local.FirstOrDefault(p => p.Id == loja.Id);
+                if (cc != null)
+                    _context.Entry<Loja>(cc).State = EntityState.Detached;
+                _context.Lojas.Update(loja);
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = "Falha ao atualizar a loja!";
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
         [HttpGet("ativas")]
         public IEnumerable<Loja> Ativas(double lat, double lon, TipoOrdenacao tipoOrdenacao)
         {
@@ -153,7 +237,6 @@ namespace AllDelivery.Api.Controllers
                 return Ok(new { Id = lj.Id });
             }
         }
-
         [HttpGet("banner")]
         public IActionResult Banner(int loja)
         {
@@ -167,7 +250,6 @@ namespace AllDelivery.Api.Controllers
                 return Ok(new { Id = lj.Id});
             }
         }
-
         [HttpGet("formaspagamento")]
         public IActionResult FormasPagamento(int loja)
         {
