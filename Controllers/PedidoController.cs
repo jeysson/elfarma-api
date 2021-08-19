@@ -113,7 +113,7 @@ namespace AllDelivery.Api.Controllers
                     .ThenBy(p => p.StatusId)
                     , indice, tamanho);
 
-                object list = new Paginar<Object>(page.Select(p => new
+                object list = new Paginar<Object>(page.Itens.Select(p => new
                 {
                     Id = p.Id,
                     Loja = p.Loja.NomeFantasia,
@@ -123,7 +123,7 @@ namespace AllDelivery.Api.Controllers
                     QuantidadeItem = p.Itens.First().Quantidade,
                     Quantidade = p.Itens.Count,
                     Status = p.StatusId
-                }).ToList<object>(), page.Count, indice, tamanho);
+                }).ToList<object>(), page.Itens.Count, indice, tamanho);
 
                 mensageiro.Dados = list;
             }

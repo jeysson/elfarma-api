@@ -29,13 +29,40 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try 
             {
-                mensageiro.Dados = _context.Lojas.FirstOrDefault(p => p.Id == loja);
+                //var xx = _context.Lojas.Select(p => new Loja
+                //{
+                //    Id = p.Id,
+                //    CNPJ = p.CNPJ,
+                //    NomeRazao = p.NomeRazao,
+                //    NomeFantasia = p.NomeFantasia,
+                //    Ativo = p.Ativo,
+                //    Email = p.Email,
+                //    TelefoneCelular = p.TelefoneCelular,
+                //    TelefoneAlternativo = p.TelefoneAlternativo,
+                //    TelefoneComercial = p.TelefoneComercial,
+                //    HAbre = p.HAbre,
+                //    HFecha = p.HFecha,
+                //    PedidoMinimo = p.PedidoMinimo,
+                //    TempoMaximo = p.TempoMaximo,
+                //    TempoMinimo = p.TempoMinimo,
+                //    Contato = p.Contato,
+                //    CEP = p.CEP,
+                //    Complemento = p.Complemento,
+                //    UF = p.UF,
+                //    Bairro = p.Bairro,
+                //    Numero = p.Numero,
+                //    Descricao = p.Descricao,
+                //    Cidade = p.Cidade,
+                //    TaxaEntrega = p.TaxaEntrega,
+                //    Endereco = p.Endereco
+                //}).FirstOrDefault(p => p.Id == loja);
+                var xx = _context.Lojas.FirstOrDefault(p => p.Id == loja);
+                mensageiro.Dados = xx;
             }
             catch (Exception ex)
             {
                 mensageiro.Codigo = 300;
                 mensageiro.Mensagem = ex.Message;
-                _context.Database.RollbackTransaction();
             }
 
             return Ok(mensageiro);
@@ -87,7 +114,7 @@ namespace AllDelivery.Api.Controllers
         [HttpPut("atualizar")]
         public async Task<IActionResult> Atualizar(Loja loja) 
         {
-            Mensageiro mensageiro = new Mensageiro(200, "Loja atualizado com sucesso!");
+            Mensageiro mensageiro = new Mensageiro(200, "Loja atualizada com sucesso!");
             try
             {
                 _context.Database.BeginTransaction();
@@ -98,11 +125,59 @@ namespace AllDelivery.Api.Controllers
                 _context.SaveChanges();
                 _context.Database.CommitTransaction();
             }
+            catch(Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpPut("inativar")]
+        public async Task<IActionResult> Inativar(Loja loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, string.Format("{0} com sucesso!", loja.Ativo ? "ativada" : "inativada"));
+            try
+            {
+                _context.Database.BeginTransaction();
+                _context.Attach(loja);
+                _context.Entry<Loja>(loja).Property(p => p.Ativo).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.Disponivel).IsModified = true;
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
             catch
             {
                 mensageiro.Codigo = 300;
-                mensageiro.Mensagem = "Falha ao atualizar a loja!";
+                mensageiro.Mensagem = "Falha ao realizar a operação!";
                 _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("paging")]
+        public async Task<IActionResult> Paging(int indice, int total) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                mensageiro.Dados = await Paginar<Loja>.CreateAsync(_context.Lojas.OrderBy(p => p.Id).Select(p => new Loja
+               {
+                   Id = p.Id,
+                   CNPJ = p.CNPJ,
+                   NomeRazao = p.NomeRazao,
+                   NomeFantasia = p.NomeFantasia,
+                   Disponivel = p.Disponivel,
+                   Ativo = p.Ativo,
+                   Email = p.Email
+               }), indice, total);
+                
+            }
+            catch (Exception ex) 
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
             }
             return Ok(mensageiro);
         }
