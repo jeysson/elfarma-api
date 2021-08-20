@@ -29,33 +29,6 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try 
             {
-                //var xx = _context.Lojas.Select(p => new Loja
-                //{
-                //    Id = p.Id,
-                //    CNPJ = p.CNPJ,
-                //    NomeRazao = p.NomeRazao,
-                //    NomeFantasia = p.NomeFantasia,
-                //    Ativo = p.Ativo,
-                //    Email = p.Email,
-                //    TelefoneCelular = p.TelefoneCelular,
-                //    TelefoneAlternativo = p.TelefoneAlternativo,
-                //    TelefoneComercial = p.TelefoneComercial,
-                //    HAbre = p.HAbre,
-                //    HFecha = p.HFecha,
-                //    PedidoMinimo = p.PedidoMinimo,
-                //    TempoMaximo = p.TempoMaximo,
-                //    TempoMinimo = p.TempoMinimo,
-                //    Contato = p.Contato,
-                //    CEP = p.CEP,
-                //    Complemento = p.Complemento,
-                //    UF = p.UF,
-                //    Bairro = p.Bairro,
-                //    Numero = p.Numero,
-                //    Descricao = p.Descricao,
-                //    Cidade = p.Cidade,
-                //    TaxaEntrega = p.TaxaEntrega,
-                //    Endereco = p.Endereco
-                //}).FirstOrDefault(p => p.Id == loja);
                 var xx = _context.Lojas.FirstOrDefault(p => p.Id == loja);
                 mensageiro.Dados = xx;
             }
@@ -74,6 +47,16 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200 ,"Loja cadastrada com sucesso!");
             try
             {
+                if(loja.Location == null || loja.Location.IsEmpty) 
+                {
+                    loja.Location = new Point(-60.04647621591336, -3.1103628672581847);
+                }
+                loja.HAbre = 800;
+                loja.HFecha = 2100;
+                loja.PedidoMinimo = 0;
+                loja.TaxaEntrega = 0;
+                loja.TempoMaximo = 60;
+                loja.TempoMinimo = 30;
                 _context.Database.BeginTransaction();
                 _context.Lojas.Add(loja);
                 _context.SaveChanges();
@@ -102,10 +85,10 @@ namespace AllDelivery.Api.Controllers
                 _context.SaveChanges();
                 _context.Database.CommitTransaction();
             }
-            catch
+            catch(Exception ex)
             {
                 mensageiro.Codigo = 300;
-                mensageiro.Mensagem = "Falha ao excluir a loja!";
+                mensageiro.Mensagem = ex.Message;
                 _context.Database.RollbackTransaction();
             }
             return Ok(mensageiro);
@@ -117,6 +100,12 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200, "Loja atualizada com sucesso!");
             try
             {
+                if (loja.Location == null || loja.Location.IsEmpty) 
+                {
+                    var loj = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
+                    loja.Location = loj.Location;
+                }
+
                 _context.Database.BeginTransaction();
                 var cc = _context.Lojas.Local.FirstOrDefault(p => p.Id == loja.Id);
                 if (cc != null)
@@ -137,7 +126,7 @@ namespace AllDelivery.Api.Controllers
         [HttpPut("inativar")]
         public async Task<IActionResult> Inativar(Loja loja)
         {
-            Mensageiro mensageiro = new Mensageiro(200, string.Format("{0} com sucesso!", loja.Ativo ? "ativada" : "inativada"));
+            Mensageiro mensageiro = new Mensageiro(200, string.Format("{0} com sucesso!", loja.Ativo ? "Ativada" : "Inativada"));
             try
             {
                 _context.Database.BeginTransaction();
