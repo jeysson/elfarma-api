@@ -52,6 +52,10 @@ namespace AllDelivery.Api
 
         public DbSet<StatusPedido> StatusPedidos { get; set; }
 
+        public DbSet<UnidadeMedida> UnidadeMedidas { get; set; }
+
+        public DbSet<Categoria> Categorias { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<GrupoProduto>()
@@ -62,6 +66,9 @@ namespace AllDelivery.Api
 
             modelBuilder.Entity<LojaFormaPagamento>()
                 .HasKey(c => new { c.LojaId, c.FormaPagamentoId });
+
+            modelBuilder.Entity<Pedido>()
+                .HasOne(p => p.Status).WithMany();
         }
     }
 }

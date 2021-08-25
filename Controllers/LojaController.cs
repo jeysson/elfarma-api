@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net;
+using System.Net.Mail;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,7 +9,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NetTopologySuite.Geometries;
+using System.Text;
 
 namespace AllDelivery.Api.Controllers
 {
@@ -17,10 +21,12 @@ namespace AllDelivery.Api.Controllers
     public class LojaController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        readonly PasswordHasher _passwordHasher;
 
-        public LojaController(ApplicationDbContext context)
+        public LojaController(ApplicationDbContext context, IOptions<HashingOptions> options)
         {
             _context = context;
+            _passwordHasher = new PasswordHasher(options);
         }
 
         [HttpGet("obterloja")]
@@ -44,12 +50,12 @@ namespace AllDelivery.Api.Controllers
         [HttpPost("cadastrar")]
         public async Task<IActionResult> Cadastrar(Loja loja) 
         {
-            Mensageiro mensageiro = new Mensageiro(200 ,"Loja cadastrada com sucesso!");
+            Mensageiro mensageiro = new Mensageiro(200 , "Operação realizada com sucesso!");
             try
             {
                 if(loja.Location == null || loja.Location.IsEmpty) 
                 {
-                    loja.Location = new Point(-60.04647621591336, -3.1103628672581847);
+                    loja.Location = new Point(-3.1103628672581847, - 60.04647621591336);
                 }
                 loja.HAbre = 800;
                 loja.HFecha = 2100;
@@ -65,7 +71,7 @@ namespace AllDelivery.Api.Controllers
             catch (Exception ex)
             {
                 mensageiro.Codigo = 300;
-                mensageiro.Mensagem = "Falha ao cadastrar a loja!";
+                mensageiro.Mensagem = ex.Message;
                 _context.Database.RollbackTransaction();
             }
             return Ok(mensageiro);
@@ -74,11 +80,11 @@ namespace AllDelivery.Api.Controllers
         [HttpDelete("excluir")]
         public async Task<IActionResult> Excluir(uint loja)
         {
-            Mensageiro mensageiro = new Mensageiro(200 ,"Loja excluída com sucesso!");
+            Mensageiro mensageiro = new Mensageiro(200 , "Operação realizada com sucesso!");
             try
             {
                 _context.Database.BeginTransaction();
-                var cc = _context.Lojas.Local.FirstOrDefault(p => p.Id == loja);
+                var cc = _context.Lojas.FirstOrDefault(p => p.Id == loja);
                 if (cc != null)
                     _context.Entry<Loja>(cc).State = EntityState.Detached;
                 _context.Lojas.Remove(cc);
@@ -97,7 +103,7 @@ namespace AllDelivery.Api.Controllers
         [HttpPut("atualizar")]
         public async Task<IActionResult> Atualizar(Loja loja) 
         {
-            Mensageiro mensageiro = new Mensageiro(200, "Loja atualizada com sucesso!");
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
                 if (loja.Location == null || loja.Location.IsEmpty) 
@@ -107,7 +113,7 @@ namespace AllDelivery.Api.Controllers
                 }
 
                 _context.Database.BeginTransaction();
-                var cc = _context.Lojas.Local.FirstOrDefault(p => p.Id == loja.Id);
+                var cc = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
                 if (cc != null)
                     _context.Entry<Loja>(cc).State = EntityState.Detached;
                 _context.Lojas.Update(loja);
@@ -168,6 +174,99 @@ namespace AllDelivery.Api.Controllers
                 mensageiro.Codigo = 300;
                 mensageiro.Mensagem = ex.Message;
             }
+            return Ok(mensageiro);
+        }
+
+        [HttpPost("enviaremail")]
+        public async Task<IActionResult> EnviarEmail(Loja loja) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                var us = _context.Usuarios.FirstOrDefault(p => p.Email == loja.Email && p.Loja.Id == loja.Id);
+
+                if (us == null)
+                {
+                    mensageiro.Codigo = 300;
+                    mensageiro.Mensagem = "Usuário não foi encontrado";
+                    mensageiro.Dados = false;
+                    return Ok(mensageiro);
+                }
+
+                string novasenha = GeneratePassword(8);
+                us.Senha = _passwordHasher.Hash(novasenha);
+                _context.SaveChanges();
+
+                SmtpClient client = new SmtpClient();
+                //
+                // Para desenvolvimento
+                client.Host = "smtp.zoho.com";
+                client.Port = 587;
+                client.EnableSsl = true;
+                client.UseDefaultCredentials = false;
+                client.Credentials = new NetworkCredential("jeysson.paiva@hashtagmobile.com.br", "j3ysson@paiva");
+                //
+                #region Corpo Email
+                StringBuilder str = new StringBuilder();
+
+                str.AppendLine("<html>");
+                str.AppendLine("	<head>");
+                str.AppendLine("		<style type=\"text/css\">");
+                str.AppendLine("		.tg  {border-collapse:collapse;border-spacing:0;}");
+                str.AppendLine("		.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;");
+                str.AppendLine("		  overflow:hidden;padding:10px 5px;word-break:normal;}");
+                str.AppendLine("		.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;");
+                str.AppendLine("		  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}");
+                str.AppendLine("		.tg .tg-zv4m{border-color:#ffffff;text-align:left;vertical-align:top}");
+                str.AppendLine("		.tg .tg-2y37{border-color:#ffffff;font-size:24px;text-align:center;vertical-align:top}");
+                str.AppendLine("		.tg .tg-fo2l{background-color:#3166ff;border-color:#3166ff;font-size:14px;text-align:left;vertical-align:top}");
+                str.AppendLine("		.tg .tg-fbuf{background-color:#3166ff;border-color:#3166ff;text-align:left;vertical-align:top}");
+                str.AppendLine("		.tg .tg-b420{border-color:#ffffff;font-size:18px;text-align:center;vertical-align:top}");
+                str.AppendLine("		</style>	");
+                str.AppendLine("	</head>");
+                str.AppendLine("	<body>");
+                str.AppendLine("		<table class=\"tg\">");
+                str.AppendLine("		<thead>");
+                str.AppendLine("		  <tr>");
+                str.AppendLine("			<th class=\"tg-fo2l\"><span style=\"font-weight:bold; color:#FFF\">Appmed</span></th>");
+                str.AppendLine("			<th class=\"tg-fbuf\"></th>");
+                str.AppendLine("			<th class=\"tg-fbuf\"></th>");
+                str.AppendLine("		  </tr>");
+                str.AppendLine("		</thead>");
+                str.AppendLine("		<tbody>");
+                str.AppendLine("		  <tr>");
+                str.AppendLine("			<td class=\"tg-zv4m\" colspan=\"3\">Foi gerado uma senha provisória para seu acesso a plataforma. No seu primeiro acesso será solicitado a troca senha</td>");
+                str.AppendLine("		  </tr>");
+                str.AppendLine("		  <tr>");
+                str.AppendLine("			<td class=\"tg-b420\" colspan=\"3\"><span style=\"color:#3166FF\">senha:</span></td>");
+                str.AppendLine("		  </tr>");
+                str.AppendLine("		  <tr>");
+                str.AppendLine("			<td class=\"tg-2y37\" colspan=\"3\"><span style=\"font-weight:bold; color:#3166FF\">" + novasenha + "</span></td>");
+                str.AppendLine("		  </tr>");
+                str.AppendLine("		</tbody>");
+                str.AppendLine("		</table>");
+                str.AppendLine("	</body>");
+                str.AppendLine("</htmla>");
+                #endregion
+                //
+                MailMessage mailMessage = new MailMessage();
+                mailMessage.From = new MailAddress("jeysson.paiva@hashtagmobile.com.br");
+                mailMessage.To.Add(loja.Email);
+                mailMessage.Body = str.ToString();
+                mailMessage.Subject = "AppMed - Senha Provisória";
+                mailMessage.IsBodyHtml = true;
+                client.Send(mailMessage);
+
+
+                mensageiro.Dados = true;
+            }
+            catch(Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+                mensageiro.Dados = false;
+            }
+
             return Ok(mensageiro);
         }
 
@@ -301,6 +400,7 @@ namespace AllDelivery.Api.Controllers
                 return Ok(new { Id = lj.Id });
             }
         }
+
         [HttpGet("banner")]
         public IActionResult Banner(int loja)
         {
@@ -314,6 +414,7 @@ namespace AllDelivery.Api.Controllers
                 return Ok(new { Id = lj.Id});
             }
         }
+
         [HttpGet("formaspagamento")]
         public IActionResult FormasPagamento(int loja)
         {
@@ -323,5 +424,20 @@ namespace AllDelivery.Api.Controllers
                                                  .Select(p=> p.FormaPagamento);
             return Ok(formas);
         }
+
+        public string GeneratePassword(int Size)
+        {
+            string randomno = "abcdefghijklmnopqrstuvwyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            StringBuilder builder = new StringBuilder();
+            Random random = new Random();
+            char ch;
+            for (int i = 0; i < Size; i++)
+            {
+                ch = randomno[random.Next(0, randomno.Length)];
+                builder.Append(ch);
+            }
+            return builder.ToString();
+        }
+
     }
 }

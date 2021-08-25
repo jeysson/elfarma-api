@@ -31,7 +31,7 @@ namespace AllDelivery.Api.Controllers
             {
                 _context.Database.BeginTransaction();
                 pedido.Data = DateTime.UtcNow;
-                pedido.StatusId = 1;
+                pedido.Status.Id = 1;
                 pedido.Ende = pedido.Endereco.ToString();
                 pedido.LojaId = pedido.Loja.Id;
                 pedido.Loja = null;
@@ -110,7 +110,7 @@ namespace AllDelivery.Api.Controllers
                     .Include(p => p.Itens)
                     .ThenInclude(p => p.Produto)
                     .OrderByDescending(p => p.Data)
-                    .ThenBy(p => p.StatusId)
+                    .ThenBy(p => p.Status.Id)
                     , indice, tamanho);
 
                 object list = new Paginar<Object>(page.Itens.Select(p => new
@@ -122,7 +122,7 @@ namespace AllDelivery.Api.Controllers
                     NomeItem = p.Itens.First().Produto.Nome,
                     QuantidadeItem = p.Itens.First().Quantidade,
                     Quantidade = p.Itens.Count,
-                    Status = p.StatusId
+                    Status = p.Status.Id
                 }).ToList<object>(), page.Itens.Count, indice, tamanho);
 
                 mensageiro.Dados = list;
