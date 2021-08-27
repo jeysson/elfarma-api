@@ -52,7 +52,6 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200 , "Operação realizada com sucesso!");
             try
             {
-                cat.LojaId = 4;
                 _context.Database.BeginTransaction();
                 _context.Categorias.Add(cat);
                 _context.SaveChanges();
@@ -135,7 +134,7 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpGet("paging")]
-        public async Task<IActionResult> Paging(int indice, int total) 
+        public async Task<IActionResult> PagingGestao(int indice, int total) 
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
@@ -148,6 +147,42 @@ namespace AllDelivery.Api.Controllers
                 mensageiro.Codigo = 300;
                 mensageiro.Mensagem = ex.Message;
             }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("paginar")]
+        public async Task<IActionResult> PaginarLoja(uint loja, int indice, int total) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                mensageiro.Dados = await Paginar<Categoria>.CreateAsync(_context.Categorias.Where(p => p.LojaId == loja).AsNoTracking()
+                          .OrderBy(p => p.Id), indice, total);
+            }
+
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obtercategoriaativo")]
+        public async Task<IActionResult> ObterCategoriaAtivo(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                var xx = _context.Categorias.Where(p => p.LojaId == loja).Where(p => p.Ativo == true).ToList();
+                mensageiro.Dados = xx;
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
             return Ok(mensageiro);
         }
 

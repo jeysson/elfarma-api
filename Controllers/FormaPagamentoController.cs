@@ -46,6 +46,35 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
+        [HttpGet("obter")]
+        public async Task<IActionResult> Obter(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                var xx = (from fp in _context.FormaPagamentos
+                          join lfp in _context.LojaFormaPagamentos.Where(p => p.LojaId == loja) on fp.Id equals lfp.FormaPagamentoId into gfp
+                          from _fp in gfp.DefaultIfEmpty()
+                          orderby fp.Tipo, fp.Nome
+                          select new LojaFormaPagamento
+                          {
+                              LojaId = _fp.LojaId
+                          ,
+                              FormaPagamentoId = fp.Id
+                              ,
+                              FormaPagamento = fp
+                          }).ToList();
+                mensageiro.Dados = xx;
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        }
+
         [HttpPost("cadastrar")]
         public async Task<IActionResult> Cadastrar(FormaPagamento fp) 
         {
@@ -149,5 +178,30 @@ namespace AllDelivery.Api.Controllers
             }
             return Ok(mensageiro);
         }
+
+        //[HttpPost("salvar")]
+        //public async Task<IActionResult> Salvar(uint? loja, List<LojaFormaPagamento> formas)
+        //{
+        //    Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+        //    try
+        //    {
+        //        _context.Database.BeginTransaction();
+
+        //        formas.ForEach(o => o.FormaPagamento = null);
+        //        _context.LojaFormaPagamentos.RemoveRange(_context.LojaFormaPagamentos.Where(p => p.LojaId == lojaId));
+        //        _context.LojaFormaPagamentos.AddRange(formas);
+        //        _context.SaveChanges();
+        //        _context.Database.CommitTransaction();      
+        //    }
+
+        //    catch (Exception ex)
+        //    {
+        //        mensageiro.Codigo = 300;
+        //        mensageiro.Mensagem = ex.Message;
+        //        _context.Database.RollbackTransaction();
+        //    }
+
+        //    return Ok(mensageiro);
+        //}
     }
 }

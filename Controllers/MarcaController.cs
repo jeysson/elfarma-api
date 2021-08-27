@@ -17,24 +17,24 @@ namespace AllDelivery.Api.Controllers
     [ApiController]
     [Authorize("Bearer")]
     [Route("api/[controller]")]
-    public class StatusPedidoController : ControllerBase
+    public class MarcaController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
         readonly PasswordHasher _passwordHasher;
 
-        public StatusPedidoController(ApplicationDbContext context, IOptions<HashingOptions> options)
+        public MarcaController(ApplicationDbContext context, IOptions<HashingOptions> options)
         {
             _context = context;
             _passwordHasher = new PasswordHasher(options);
         }
 
-        [HttpGet("obterstatus")]
-        public async Task<IActionResult> ObterStatus(uint sp) 
+        [HttpGet("obtermarca")]
+        public async Task<IActionResult> ObterMarca(uint marca) 
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try 
             {
-                var xx = _context.StatusPedidos.FirstOrDefault(p => p.Id == sp);
+                var xx = _context.Marcas.FirstOrDefault(p => p.Id == marca);
                 mensageiro.Dados = xx;
             }
             catch (Exception ex)
@@ -47,24 +47,15 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpPost("cadastrar")]
-        public async Task<IActionResult> Cadastrar(StatusPedido sp) 
+        public async Task<IActionResult> Cadastrar(Marca marca) 
         {
             Mensageiro mensageiro = new Mensageiro(200 , "Operação realizada com sucesso!");
             try
             {
-                var seq = _context.StatusPedidos.FirstOrDefault(p => p.Sequencia == sp.Sequencia);
-                if (seq == null)
-                {
-                    _context.Database.BeginTransaction();
-                    _context.StatusPedidos.Add(sp);
-                    _context.SaveChanges();
-                    _context.Database.CommitTransaction();
-                }
-                else 
-                {
-                    mensageiro.Codigo = 300;
-                    mensageiro.Mensagem = "Sequencia já está sendo utilizada em outro status!";
-                }
+                _context.Database.BeginTransaction();
+                _context.Marcas.Add(marca);
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
             }
             catch (Exception ex)
             {
@@ -76,16 +67,16 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpDelete("excluir")]
-        public async Task<IActionResult> Excluir(uint sp)
+        public async Task<IActionResult> Excluir(uint marca)
         {
             Mensageiro mensageiro = new Mensageiro(200 , "Operação realizada com sucesso!");
             try
             {
                 _context.Database.BeginTransaction();
-                var cc = _context.StatusPedidos.FirstOrDefault(p => p.Id == sp);
+                var cc = _context.Marcas.FirstOrDefault(p => p.Id == marca);
                 if (cc != null)
-                    _context.Entry<StatusPedido>(cc).State = EntityState.Detached;
-                _context.StatusPedidos.Remove(cc);
+                    _context.Entry<Marca>(cc).State = EntityState.Detached;
+                _context.Marcas.Remove(cc);
                 _context.SaveChanges();
                 _context.Database.CommitTransaction();
             }
@@ -99,16 +90,16 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpPut("atualizar")]
-        public async Task<IActionResult> Atualizar(StatusPedido sp) 
+        public async Task<IActionResult> Atualizar(Marca marca) 
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
                 _context.Database.BeginTransaction();
-                var cc = _context.StatusPedidos.FirstOrDefault(p => p.Id == sp.Id);
+                var cc = _context.Marcas.FirstOrDefault(p => p.Id == marca.Id);
                 if (cc != null)
-                    _context.Entry<StatusPedido>(cc).State = EntityState.Detached;
-                _context.StatusPedidos.Update(sp);
+                    _context.Entry<Marca>(cc).State = EntityState.Detached;
+                _context.Marcas.Update(marca);
                 _context.SaveChanges();
                 _context.Database.CommitTransaction();
             }
@@ -122,48 +113,62 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpPut("inativar")]
-        public async Task<IActionResult> Inativar(StatusPedido sp)
+        public async Task<IActionResult> Inativar(Marca marca)
         {
-            Mensageiro mensageiro = new Mensageiro(200, string.Format("{0} com sucesso!", sp.Ativo ? "Ativada" : "Inativada"));
+            Mensageiro mensageiro = new Mensageiro(200, string.Format("{0} com sucesso!", marca.Ativo ? "Ativada" : "Inativada"));
             try
             {
                 _context.Database.BeginTransaction();
-                _context.Attach(sp);
-                _context.Entry<StatusPedido>(sp).Property(p => p.Ativo).IsModified = true;
+                _context.Attach(marca);
+                _context.Entry<Marca>(marca).Property(p => p.Ativo).IsModified = true;
                 _context.SaveChanges();
                 _context.Database.CommitTransaction();
             }
-            catch(Exception ex)
+            catch
             {
                 mensageiro.Codigo = 300;
-                mensageiro.Mensagem = ex.Message;
+                mensageiro.Mensagem = "Falha ao realizar a operação!";
                 _context.Database.RollbackTransaction();
             }
             return Ok(mensageiro);
         }
 
-        [HttpGet("paging")]
-        public async Task<IActionResult> Paging(int indice, int total) 
+
+        [HttpGet("paginar")]
+        public async Task<IActionResult> PaginarLoja(uint loja, int indice, int total) 
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
-                mensageiro.Dados = await Paginar<StatusPedido>.CreateAsync(_context.StatusPedidos.OrderBy(p => p.Sequencia).Select(p => new StatusPedido
-                {
-                    Sequencia = p.Sequencia,
-                    Nome = p.Nome,
-                    Ativo = p.Ativo,
-                    Descricao = p.Descricao,
-                    Id = p.Id
-                }), indice, total);
-                
+                mensageiro.Dados = await Paginar<Marca>.CreateAsync(_context.Marcas.Where(p => p.LojaId == loja).AsNoTracking()
+                          .OrderBy(p => p.Id), indice, total);
             }
-            catch (Exception ex) 
+
+            catch (Exception ex)
             {
                 mensageiro.Codigo = 300;
                 mensageiro.Mensagem = ex.Message;
             }
             return Ok(mensageiro);
         }
+
+        [HttpGet("obtermarcaativo")]
+        public async Task<IActionResult> ObterMarcaAtivo(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                var xx = _context.Marcas.Where(p => p.LojaId == loja).Where(p => p.Ativo == true).ToList();
+                mensageiro.Dados = xx;
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        }
+
     }
 }

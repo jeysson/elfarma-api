@@ -56,6 +56,8 @@ namespace AllDelivery.Api
 
         public DbSet<Categoria> Categorias { get; set; }
 
+        public DbSet<Marca> Marcas { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<GrupoProduto>()

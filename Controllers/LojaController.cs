@@ -77,6 +77,29 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
+        [HttpPost("cadastrarloja")]
+        public async Task<IActionResult> CadastrarLoja(Loja loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                _context.Lojas.Add(loja);
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                if (ex.InnerException != null && ex.InnerException.Message.Contains("Duplicate entry"))
+                    mensageiro.Mensagem = "Já existe uma loja com essa sequência!";
+                else
+                    mensageiro.Mensagem = "Falha ao cadastrar!";
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
         [HttpDelete("excluir")]
         public async Task<IActionResult> Excluir(uint loja)
         {
@@ -100,23 +123,80 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
+        [HttpPut("atualizarloja")]
+        public async Task<IActionResult> AtualizarLoja(Loja loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                var loj = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
+                if(loja.Location == null || loja.Location.IsEmpty)
+                {
+                    loja.Location = loj.Location;
+                }
+                _context.Database.BeginTransaction();
+                var cc = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
+                if (cc != null)
+                    _context.Entry<Loja>(cc).State = EntityState.Detached;
+                _context.Lojas.Update(loja);
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
         [HttpPut("atualizar")]
         public async Task<IActionResult> Atualizar(Loja loja) 
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
-                if (loja.Location == null || loja.Location.IsEmpty) 
+                var loj = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
+                if (loja.CEP != loj.CEP || loja.Numero != loj.Numero) 
                 {
-                    var loj = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
-                    loja.Location = loj.Location;
+                    loj.CEP = loja.CEP;
+                    loj.Numero = loja.Numero;
+                    loj.Endereco = loja.Endereco;
+                    loj.Bairro = loja.Bairro;
+                    loj.UF = loja.UF;
+                    loj.Complemento = loja.Complemento;
+                    loj.Cidade = loja.Cidade; 
+                }
+                if (loja.CNPJ != loj.CNPJ)
+                    loj.CNPJ = loja.CNPJ;
+                if (loja.NomeFantasia != loj.NomeFantasia)
+                    loj.NomeFantasia = loja.NomeFantasia;
+                if (loja.NomeRazao != loj.NomeRazao)
+                    loj.NomeRazao = loja.NomeRazao;
+                if (loj.Email != loja.Email)
+                    loj.Email = loja.Email;
+                if (loja.Descricao != loj.Descricao)
+                    loj.Descricao = loja.Descricao;
+                if (loja.Contato != loj.Contato)
+                    loj.Contato = loja.Contato;
+                if (loja.TelefoneAlternativo != loj.TelefoneAlternativo)
+                    loj.TelefoneAlternativo = loja.TelefoneAlternativo;
+                if (loja.TelefoneCelular != loj.TelefoneCelular)
+                    loj.TelefoneCelular = loja.TelefoneCelular;
+                if (loja.TelefoneComercial != loj.TelefoneComercial)
+                    loj.TelefoneComercial = loja.TelefoneComercial;
+                if(loja.ImgBanner != loj.ImgBanner || loja.ImgLogo != loj.ImgLogo) 
+                {
+                    loj.ImgBanner = loja.ImgBanner;
+                    loj.ImgLogo = loja.ImgLogo;
                 }
 
                 _context.Database.BeginTransaction();
                 var cc = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
                 if (cc != null)
                     _context.Entry<Loja>(cc).State = EntityState.Detached;
-                _context.Lojas.Update(loja);
+                _context.Lojas.Update(loj);
                 _context.SaveChanges();
                 _context.Database.CommitTransaction();
             }

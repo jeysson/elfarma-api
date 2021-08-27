@@ -52,7 +52,6 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200 ,"Operação realizada com sucesso!");
             try
             {
-                um.LojaId = 4;
                 _context.Database.BeginTransaction();
                 _context.UnidadeMedidas.Add(um);
                 _context.SaveChanges();
@@ -60,8 +59,16 @@ namespace AllDelivery.Api.Controllers
             }
             catch (Exception ex)
             {
-                mensageiro.Codigo = 300;
-                mensageiro.Mensagem = ex.Message;
+                if (ex.InnerException != null && ex.InnerException.Message.Contains("Duplicate entry"))
+                {
+                    mensageiro.Codigo = 300;
+                    mensageiro.Mensagem = "Já existe uma Unidade de Medida com essa sequência!";
+                }
+                else
+                {
+                    mensageiro.Codigo = 300;
+                    mensageiro.Mensagem = ex.Message;
+                }
                 _context.Database.RollbackTransaction();
             }
             return Ok(mensageiro);
@@ -135,7 +142,7 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpGet("paging")]
-        public async Task<IActionResult> Paging(int indice, int total) 
+        public async Task<IActionResult> PagingGestao(int indice, int total) 
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
@@ -148,6 +155,42 @@ namespace AllDelivery.Api.Controllers
                 mensageiro.Codigo = 300;
                 mensageiro.Mensagem = ex.Message;
             }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("paginar")]
+        public async Task<IActionResult> PaginarLoja(uint loja, int indice, int total)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                mensageiro.Dados = await Paginar<UnidadeMedida>.CreateAsync(_context.UnidadeMedidas.Where(p => p.LojaId == loja).AsNoTracking()
+                          .OrderBy(p => p.Id), indice, total);
+            }
+
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obterunidademedidaativo")]
+        public async Task<IActionResult> ObterUnidadeMedidaAtivo(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                var xx = _context.UnidadeMedidas.Where(p => p.LojaId == loja).Where(p => p.Ativo == true).ToList();
+                mensageiro.Dados = xx;
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
             return Ok(mensageiro);
         }
     }
