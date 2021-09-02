@@ -365,32 +365,32 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
-        [HttpGet("obterprodutomaisvendido")]
-        public async Task<IActionResult> ObterProdutoMaisVendido(uint loja) 
-        {
-            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+        //[HttpGet("obterprodutomaisvendido")]
+        //public async Task<IActionResult> ObterProdutoMaisVendido(uint loja) 
+        //{
+        //    Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
 
-            try 
-            {
-                var grp = _context.PedidoItens
-                                   .Include(p => p.Pedido)
-                                   .Include(p => p.Produto)
-                                   .Where(p => p.Pedido.LojaId == loja && p.Pedido.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Pedido.Status.Id == 3)
-                                   .ToList()
-                                   .GroupBy(p => p.Produto);
+        //    try 
+        //    {
+        //        var grp = _context.PedidoItens
+        //                           .Include(p => p.Pedido)
+        //                           .Include(p => p.Produto)
+        //                           .Where(p => p.Pedido.LojaId == loja && p.Pedido.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Pedido.Status.Id == 3)
+        //                           .ToList()
+        //                           .GroupBy(p => p.Produto);
 
-                mensageiro.Dados = grp.Select(p => new { Produto = p.Key, Total = p.Sum(x => x.Quantidade) })
-                            .OrderByDescending(p => p.Total)
-                            .FirstOrDefault().Produto;
-            }
-            catch (Exception ex)
-            {
-                mensageiro.Codigo = 300;
-                mensageiro.Mensagem = ex.Message;
-            }
+        //        mensageiro.Dados = grp.Select(p => new { Produto = p.Key, Total = p.Sum(x => x.Quantidade) })
+        //                    .OrderByDescending(p => p.Total)
+        //                    .FirstOrDefault().Produto;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        mensageiro.Codigo = 300;
+        //        mensageiro.Mensagem = ex.Message;
+        //    }
            
-            return Ok(mensageiro);
-        }
+        //    return Ok(mensageiro);
+        //}
        
         [HttpGet("obtersemana")]
         public async Task<IActionResult> ObterPedidosSemana(uint loja)
@@ -508,7 +508,7 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
-        [HttpGet("obterpedido14D")]
+        [HttpGet("atrasados")]
         public async Task<IActionResult> PorcentagemAtraso(uint loja)
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");

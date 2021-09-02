@@ -107,5 +107,81 @@ namespace AllDelivery.Api.Controllers
             //
             return Ok(list);
         }
+
+        [HttpGet("paginarproduto")]
+        public async Task<IActionResult> PaginarProduto(uint loja, int pagina, int registrosPagina, string filtro = "") 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try
+            {
+                if (string.IsNullOrEmpty(filtro))
+                {
+                    mensageiro.Dados = await Paginar<Produto>.CreateAsync(_context.Produtos.Include(p => p.Loja).Include(p => p.Categoria).Include(p => p.Marca)
+                        .Include(p => p.UnidadeMedida)
+                        .Where(p => p.LojaId == loja).AsNoTracking()
+                        .OrderBy(p => p.Id), pagina, registrosPagina);
+                }
+                else
+                {
+                    mensageiro.Dados = await Paginar<Produto>.CreateAsync(_context.Produtos.Include(p => p.Loja).Include(p => p.Categoria).Include(p => p.Marca).Include(p => p.UnidadeMedida)
+                        .Where(p => p.Nome.ToUpper().Contains(filtro.ToUpper()) && p.Loja.Id == loja).AsNoTracking()
+                        .OrderBy(p => p.Nome), pagina, registrosPagina);
+                }
+            }
+
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("pagingproduto")]
+        public async Task<IActionResult> PagingProduto(uint loja, int pagina, int registrosPagina, string filtro = "")
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                if (string.IsNullOrEmpty(filtro))
+                {
+                    mensageiro.Dados = await Paging<Produto>.CreateAsync(_context.Produtos.Include(p => p.Loja).Include(p => p.Categoria).Include(p => p.Marca)
+                        .Include(p => p.UnidadeMedida)
+                        .Where(p => p.LojaId == loja).AsNoTracking()
+                        .OrderBy(p => p.Id), pagina, registrosPagina);
+                }
+                else
+                {
+                    mensageiro.Dados = await Paging<Produto>.CreateAsync(_context.Produtos.Include(p => p.Loja).Include(p => p.Categoria).Include(p => p.Marca)
+                        .Include(p => p.UnidadeMedida)
+                        .Where(p => p.Nome.ToUpper().Contains(filtro.ToUpper()) && p.Loja.Id == loja).AsNoTracking()
+                        .OrderBy(p => p.Nome), pagina, registrosPagina);
+                }
+            }
+
+            catch (Exception ex)
+            {
+                return null;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obterfotos")]
+        public async Task<IActionResult> ObterProdutoFotos(uint id)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try
+            {
+                mensageiro.Dados = _context.ProdutoFotos.Where(p => p.ProdutoId == id).AsNoTracking().ToList();
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
     }
 }
