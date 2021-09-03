@@ -180,26 +180,6 @@ namespace AllDelivery.Api.Controllers
             return mensageiro;
         }
 
-        [HttpGet("paginar")]
-        public async Task<IActionResult> Paginarloja(uint loja, int indice, int total)
-        {
-            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
-            try 
-            {
-                var xx = await Paginar<Pedido>.CreateAsync(_context.Pedidos.Include(p => p.Itens).Include(p => p.Atendente).Include(p => p.FormaPagamento)
-                        .Where(p => p.Loja.Id == loja && p.Status.Id == 3 && p.Itens.Count() > 0).AsNoTracking()
-                        .OrderBy(p => p.Id), indice, total);
-                mensageiro.Dados = xx;
-            }
-            catch (Exception ex)
-            {
-                mensageiro.Codigo = 300;
-                mensageiro.Mensagem = ex.Message;
-            }
-            return Ok(mensageiro);
-
-        }
-
         [HttpGet("obtermes")]
         public async Task<IActionResult> ObterMes(uint loja)
         {
