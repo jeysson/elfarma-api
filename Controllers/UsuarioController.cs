@@ -263,6 +263,45 @@ namespace AllDelivery.Api.Controllers
                     _usuario.Nome = " ";
                     _usuario.Anonimo = false;
                     _context.Entry<Usuario>(_usuario).Property(p => p.Validated).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(p => p.Email).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(p => p.Nome).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(p => p.Anonimo).IsModified = true;
+                    _context.SaveChanges();
+                    _context.Database.CommitTransaction();
+                    _usuario.Senha = null;
+                    mensageiro.Dados = _usuario;
+
+                }
+                else
+                    mensageiro.Mensagem = "Código inválido";
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Mensagem = ex.Message;
+                _context.Database.RollbackTransaction();
+            }
+
+            return Ok(mensageiro);
+        }
+
+        [Authorize("Bearer")]
+        [HttpPost("atualizar")]
+        public IActionResult Atualizar(Usuario usuario)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+
+                var _usuario = _context.Usuarios.FirstOrDefault(p => p.Id == usuario.Id);
+
+                if (_usuario != null)
+                {
+                    _usuario.CPF = usuario.CPF;
+                    _usuario.Telefone = usuario.Telefone;
+
+                    _context.Entry<Usuario>(_usuario).Property(p => p.CPF).IsModified = true;
+                    _context.Entry<Usuario>(_usuario).Property(p => p.Telefone).IsModified = true;
                     _context.SaveChanges();
                     _context.Database.CommitTransaction();
                     _usuario.Senha = null;

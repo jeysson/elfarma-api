@@ -31,7 +31,7 @@ namespace AllDelivery.Api.Controllers
             {
                 _context.Database.BeginTransaction();
                 pedido.Data = DateTime.UtcNow;
-                pedido.StatusId = 1;
+                pedido.StatusPedidoId = 1;
                 pedido.Ende = pedido.Endereco.ToString();
                 pedido.LojaId = pedido.Loja.Id;
                 pedido.Loja = null;
@@ -102,15 +102,26 @@ namespace AllDelivery.Api.Controllers
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
-            {
+            {              
 
                 var page = await Paginar<Pedido>.CreateAsync(_context.Pedidos
                     .Where(p => p.UsuarioId == codUser)
                      .Include(p => p.Loja)
                     .Include(p => p.Itens)
                     .ThenInclude(p => p.Produto)
+                    .Include(p=> p.Avaliacoes)
+                    .Include(p=> p.Status)
                     .OrderByDescending(p => p.Data)
-                    .ThenBy(p => p.StatusId)
+                    .ThenBy(p => p.Status.Id)
+                    .Select(p => new Pedido
+                    {
+                        Id = p.Id,
+                        Loja = new Loja { NomeFantasia = p.Loja.NomeFantasia, ImgLogo = p.Loja.ImgLogo },
+                        Data = p.Data,
+                        Itens = p.Itens,
+                        Status = p.Status,
+                        Avaliacoes = p.Avaliacoes
+                    })                    
                     , indice, tamanho);
 
                 object list = new Paginar<Object>(page.Select(p => new
@@ -119,10 +130,14 @@ namespace AllDelivery.Api.Controllers
                     Loja = p.Loja.NomeFantasia,
                     Logo = p.Loja.ImgLogo,
                     Data = p.Data,
-                    NomeItem = p.Itens.First().Produto.Nome,
-                    QuantidadeItem = p.Itens.First().Quantidade,
+                    NomeItem1 = p.Itens[0].Produto.Nome,
+                    QuantidadeItem1 = p.Itens[0].Quantidade,
+                    NomeItem2 = p.Itens.Count > 1 ? p.Itens[1].Produto.Nome: null,
+                    QuantidadeItem2 = p.Itens.Count > 1 ? p.Itens[1].Quantidade: null,
                     Quantidade = p.Itens.Count,
-                    Status = p.StatusId
+                    Status = p.Status,
+                    Avaliacao = p.Avaliacoes.Average(z=> z.NotaLoja),
+                    DiasAvaliacao = DateTime.Now.Date.Subtract(p.Data.Value).Days
                 }).ToList<object>(), page.Count, indice, tamanho);
 
                 mensageiro.Dados = list;
@@ -145,9 +160,13 @@ namespace AllDelivery.Api.Controllers
             {
                 var dt = DateTime.Now.AddDays(-16);
 
-                var list = _context.Pedidos.Include(p => p.Loja).Where(p => p.UsuarioId == codUser
+                var list = _context.Pedidos.Include(p => p.Status)
+                                            .Include(p => p.Loja)
+                                            .Where(p => p.UsuarioId == codUser
                                                               && p.Data.Value.Date > dt.Date
-                                                              && !_context.PedidoAvaliacoes.Any(q => q.PedidoId == p.Id));
+                                                              && p.Status.Sequencia == 5
+                                                              && p.Loja.Location != null
+                                                              && !_context.PedidoAvaliacoes.Any(q => q.Pedido.Id == p.Id));
 
                 mensageiro.Dados = list;
             }
@@ -156,6 +175,38 @@ namespace AllDelivery.Api.Controllers
                 _context.Database.RollbackTransaction();
                 mensageiro.Codigo = 300;
                 mensageiro.Mensagem = "Falha na operação!";
+            }
+
+            return mensageiro;
+        }
+
+        [HttpPost("salvaravaliacao")]
+        public async Task<Mensageiro> SalvarAvaliacao(Pedido pedido)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                var pd = _context.Pedidos.FirstOrDefault(p => p.Id == pedido.Id);
+                pd.ComentarioAvaliacao = pedido.ComentarioAvaliacao;
+                _context.Entry(pd).Property(p => p.ComentarioAvaliacao).IsModified = true;
+                _context.SaveChanges();
+                //
+                pedido.Avaliacoes.ForEach(o => {
+                    o.PedidoId = o.Pedido.Id;
+                    o.Pedido = null;
+                });
+                //
+                _context.PedidoAvaliacoes.AddRange(pedido.Avaliacoes);
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;// "Falha na operação!";
+                mensageiro.Dados = ex.StackTrace;
             }
 
             return mensageiro;
