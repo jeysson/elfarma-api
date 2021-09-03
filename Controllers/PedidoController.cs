@@ -180,6 +180,356 @@ namespace AllDelivery.Api.Controllers
             return mensageiro;
         }
 
+        [HttpGet("obtermes")]
+        public async Task<IActionResult> ObterMes(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+
+            try 
+            {
+                var xx = _context.Pedidos
+                .Include(p => p.Itens)
+                .Where(p => p.LojaId == loja && p.Data.Value.Month == DateTime.Now.Month && p.Status.Id == 3)
+                .AsNoTracking().ToList();
+                mensageiro.Dados = xx;
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message; 
+            }
+
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obtersomames")]
+        public async Task<IActionResult> ObterSomaMes(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try 
+            {
+                var xx = _context.Pedidos.Include(p => p.Itens)
+                .Where(p => p.LojaId == loja && p.Data.Value.Month == DateTime.Now.Month && p.Status.Id == 3)
+                .Sum(p => p.Itens.Sum(x => x.Preco * x.Quantidade) + p.Loja.TaxaEntrega);
+                mensageiro.Dados = xx;
+            }
+            catch(Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obterdia")]
+        public async Task<IActionResult> ObterDia(uint loja) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try 
+            {
+                var xx = _context.Pedidos
+                .Include(p => p.Itens)
+                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.Date && p.Status.Id == 3)
+                .AsNoTracking().ToList();
+                mensageiro.Dados = xx;
+            }
+            catch(Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        
+        }
+
+        [HttpGet("obtersomadia")]
+        public async Task<IActionResult> ObterSomaDia(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try 
+            {
+                var xx = _context.Pedidos.Include(p => p.Itens)
+                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.Date && p.Status.Id == 3)
+                .Sum(p => p.Itens.Sum(x => x.Preco * x.Quantidade) + p.Loja.TaxaEntrega); ;
+                mensageiro.Dados = xx;
+            }
+            catch(Exception ex) 
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obter2DA")]
+        public async Task<IActionResult> ObterPedidos2DiaAnterior(uint loja) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesos");
+            try 
+            {
+                var xx = _context.Pedidos.Include(p => p.Itens)
+                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Status.Id == 3)
+                .AsNoTracking().ToList();
+                mensageiro.Dados = xx;
+            }
+            catch(Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obtersoma2DA")]
+        public async Task<IActionResult?> ObterSomaVendas2Dia(uint loja) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesos");
+
+            try 
+            {
+                var xx = _context.Pedidos.Include(p => p.Itens)
+                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Status.Id == 3)
+                .Sum(p => p.Itens.Sum(x => x.Preco * x.Quantidade) + p.Loja.TaxaEntrega);
+                mensageiro.Dados = xx;
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obternovosclientes")]
+        public async Task<IActionResult> ObterTotalNovosClientes(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+
+            try 
+            {
+                var usuarios = _context.Pedidos.Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Status.Id == 3)
+                .GroupBy(p => p.UsuarioId)
+                .Select(p => p.Key).ToList();
+
+                var usuariosAntigos = _context.Pedidos.Where(p => p.LojaId == loja &&
+                p.Data.Value.Date < DateTime.Now.AddDays(-2).Date &&
+                usuarios.Contains(p.UsuarioId) && p.Status.Id == 3)
+                    .GroupBy(p => p.UsuarioId)
+                    .Select(p => p.Key).ToList();
+
+                mensageiro.Dados = usuarios.Except(usuariosAntigos).Count();
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message; 
+            }
+
+            return Ok(mensageiro);
+
+        }
+
+        [HttpGet("obtersomanovosclientes")]
+        public async Task<IActionResult> ObterSomaNovosClientes(uint loja) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+
+            try 
+            {
+                //busca os pedidos de 2 dias atrás
+                var usuarios = _context.Pedidos.Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date)
+                    .GroupBy(p => p.UsuarioId)
+                    .Select(p => p.Key).ToList();
+                //buscar todos os pedidos realizados anteriormente 
+                var usuariosAntigos = _context.Pedidos.Where(p => p.LojaId == loja && p.Data.Value.Date < DateTime.Now.AddDays(-2).Date && usuarios.Contains(p.UsuarioId))
+                    .GroupBy(p => p.UsuarioId)
+                    .Select(p => p.Key).ToList();
+                //pega somente os usuários que não fizeram pedidos anteriormente
+                var novos = usuarios.Except(usuariosAntigos);
+
+                mensageiro.Dados = _context.Pedidos.Include(p => p.Itens)
+                    .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && novos.Contains(p.UsuarioId))
+                    .Sum(p => p.Itens.Sum(q => q.Quantidade * q.Preco) + p.Loja.TaxaEntrega);
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        }
+
+        //[HttpGet("obterprodutomaisvendido")]
+        //public async Task<IActionResult> ObterProdutoMaisVendido(uint loja) 
+        //{
+        //    Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+
+        //    try 
+        //    {
+        //        var grp = _context.PedidoItens
+        //                           .Include(p => p.Pedido)
+        //                           .Include(p => p.Produto)
+        //                           .Where(p => p.Pedido.LojaId == loja && p.Pedido.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Pedido.Status.Id == 3)
+        //                           .ToList()
+        //                           .GroupBy(p => p.Produto);
+
+        //        mensageiro.Dados = grp.Select(p => new { Produto = p.Key, Total = p.Sum(x => x.Quantidade) })
+        //                    .OrderByDescending(p => p.Total)
+        //                    .FirstOrDefault().Produto;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        mensageiro.Codigo = 300;
+        //        mensageiro.Mensagem = ex.Message;
+        //    }
+           
+        //    return Ok(mensageiro);
+        //}
+       
+        [HttpGet("obtersemana")]
+        public async Task<IActionResult> ObterPedidosSemana(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try 
+            {
+                var xx = _context.Pedidos.Include(p => p.Itens)
+                .Where(p => p.LojaId == loja && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date && p.Status.Id == 3)
+                .AsNoTracking().ToList();
+                mensageiro.Dados = xx;
+            }
+            catch (Exception ex) 
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obtersomasemana")]
+        public async Task<IActionResult> ObterSomaVendasSemana(uint loja, decimal taxa) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+
+            try 
+            {
+
+                var soma = _context.Pedidos.Include(p => p.Itens)
+                    .Where(p => p.LojaId == loja && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date && p.Status.Id == 3)
+                    .Sum(p => p.Itens.Sum(x => x.Preco * x.Quantidade) + taxa);
+
+                mensageiro.Dados = soma;
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obterpedido7D")]
+        public async Task<IActionResult> ObterPedidosUltimos7Dias(uint loja, decimal taxa) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+
+            try 
+            {
+                decimal[] valores = new decimal[7];
+
+                var dias = _context.Pedidos
+                    .Include(p => p.Itens)
+                    .Where(p => p.LojaId == loja && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date && p.Status.Id == 3)
+                    .AsNoTracking()
+                    .ToList()
+                    .GroupBy(p => new { DiaSemana = p.Data.Value.DayOfWeek })
+                    .OrderBy(p => p.Key.DiaSemana);
+
+
+
+                for (var i = 0; i < 7; i++)
+                {
+                    var grp = dias.FirstOrDefault(p => (int)p.Key.DiaSemana == i);
+                    if (grp != null)
+                        valores[i] = grp.Sum(p => p.Itens.Sum(x => x.Quantidade.Value * x.Preco.Value) + taxa);
+                    else
+                        valores[i] = 0;
+                }
+
+                mensageiro.Dados = valores;
+            }
+            catch(Exception ex) 
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("obterpedido14D")]
+        public async Task<IActionResult> ObterPedidos14Dias(uint loja, decimal taxa) 
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+
+            try 
+            {
+                decimal[] valores = new decimal[7];
+
+                var dias = _context.Pedidos
+                    .Include(p => p.Itens)
+                    .Where(p => p.LojaId == loja && p.Data.Value.Date <= DateTime.Now.AddDays(-7).Date && p.Data.Value.Date > DateTime.Now.AddDays(-14).Date && p.Status.Id == 3)
+                    .AsNoTracking()
+                    .ToList()
+                    .GroupBy(p => new { DiaSemana = p.Data.Value.DayOfWeek })
+                    .OrderBy(p => p.Key.DiaSemana);
+
+
+                for (var i = 0; i < 7; i++)
+                {
+                    var grp = dias.FirstOrDefault(p => (int)p.Key.DiaSemana == i);
+                    if (grp != null)
+                        valores[i] = grp.Sum(p => p.Itens.Sum(x => x.Quantidade.Value * x.Preco.Value) + taxa);
+                    else
+                        valores[i] = 0;
+                }
+
+                mensageiro.Dados = valores;
+            }
+            catch(Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("atrasados")]
+        public async Task<IActionResult> PorcentagemAtraso(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try 
+            {
+                var entregasAtrasos = _context.Pedidos.Where(p => p.DataEntrega.Value > p.Data.Value.AddMinutes(p.Loja.TempoMaximo.Value)
+                 && p.LojaId == loja && p.Status.Id == 3 && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date)
+               .GroupBy(p => p.Id)
+               .Select(p => p.Key).ToList();
+
+                mensageiro.Dados = entregasAtrasos.Count();
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        }
+        
+        
         [HttpPost("salvaravaliacao")]
         public async Task<Mensageiro> SalvarAvaliacao(Pedido pedido)
         {

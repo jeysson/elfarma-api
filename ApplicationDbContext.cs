@@ -52,6 +52,12 @@ namespace AllDelivery.Api
 
         public DbSet<StatusPedido> StatusPedidos { get; set; }
 
+        public DbSet<UnidadeMedida> UnidadeMedidas { get; set; }
+
+        public DbSet<Categoria> Categorias { get; set; }
+
+        public DbSet<Marca> Marcas { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasCharSet((string)null, DelegationModes.ApplyToDatabases);
