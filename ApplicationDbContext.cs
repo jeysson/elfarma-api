@@ -60,6 +60,8 @@ namespace AllDelivery.Api
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasCharSet((string)null, DelegationModes.ApplyToDatabases);
+
             modelBuilder.Entity<GrupoProduto>()
                 .HasKey(c => new { c.GrupoId, c.ProdutoId});
 
@@ -69,8 +71,11 @@ namespace AllDelivery.Api
             modelBuilder.Entity<LojaFormaPagamento>()
                 .HasKey(c => new { c.LojaId, c.FormaPagamentoId });
 
-            modelBuilder.Entity<Pedido>()
-                .HasOne(p => p.Status).WithMany();
+            modelBuilder.Entity<Pedido>().HasOne(p => p.Status).WithMany();
+
+            modelBuilder.Entity<PedidoAvaliacao>().HasOne(p => p.Pedido).WithMany(p=> p.Avaliacoes);
+                
+
         }
     }
 }

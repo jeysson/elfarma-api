@@ -50,8 +50,10 @@ namespace AllDelivery.Api
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseMySql(
                     Configuration.GetConnectionString("DefaultConnection"),
-                    new MySqlServerVersion(new Version(5,6)),
-                    x => { x.UseNetTopologySuite(); x.CharSetBehavior(CharSetBehavior.NeverAppend); }));
+                    new MySqlServerVersion(new Version(5,7)),
+                    mySqlOptionsAction => { 
+                        mySqlOptionsAction.UseNetTopologySuite();                        
+                        /* x.CharSetBehavior(CharSetBehavior.NeverAppend);*/ }));
             //
             services.AddControllers().AddJsonOptions(options => {
                 options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());

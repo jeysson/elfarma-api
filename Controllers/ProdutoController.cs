@@ -33,8 +33,9 @@ namespace AllDelivery.Api.Controllers
         [HttpGet("grupos")]
         public IEnumerable<dynamic> Grupo(int loja)
         {
-            return _context.Grupos.Include(p => p.GrupoProdutos)
+            var grupos = _context.Grupos.Include(p => p.GrupoProdutos)
                 .ThenInclude(p => p.Produto)
+                .ThenInclude(p=> p.Loja)
                 .Where(p => p.GrupoProdutos.Count(p=> p.Produto.Ativo) > 0 && p.Loja.Id == loja && p.Ativo)
                 .Select(p => new
                 {
@@ -44,8 +45,19 @@ namespace AllDelivery.Api.Controllers
                 ,
                     Ordem = p.Ordem
                 ,
-                    Products = p.GrupoProdutos.Where(p=> p.Produto.Ativo).Select(q => q.Produto)
+                    Products = p.GrupoProdutos.Where(p=> p.Produto.Ativo).Select(q => q.Produto).ToList()
+                }).ToList();
+            //
+            grupos.ForEach(o => {
+
+                o.Products.ForEach(p =>
+                {
+                    p.Loja = new Loja() { Id = p.Loja.Id };
                 });
+            });
+
+
+            return grupos;
         }
 
         [HttpGet("produtosgrupo")]
