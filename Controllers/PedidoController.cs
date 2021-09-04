@@ -124,7 +124,7 @@ namespace AllDelivery.Api.Controllers
                     })                    
                     , indice, tamanho);
 
-                object list = new Paginar<Object>(page.Select(p => new
+                object list = new Paginar<Object>(page.Itens.Select(p => new
                 {
                     Id = p.Id,
                     Loja = p.Loja.NomeFantasia,
@@ -138,7 +138,7 @@ namespace AllDelivery.Api.Controllers
                     Status = p.Status,
                     Avaliacao = p.Avaliacoes.Average(z=> z.NotaLoja),
                     DiasAvaliacao = DateTime.Now.Date.Subtract(p.Data.Value).Days
-                }).ToList<object>(), page.Count, indice, tamanho);
+                }).ToList<object>(), page.Itens.Count, indice, tamanho);
 
                 mensageiro.Dados = list;
             }
@@ -187,11 +187,11 @@ namespace AllDelivery.Api.Controllers
 
             try 
             {
-                var xx = _context.Pedidos
+                var pedidos = _context.Pedidos
                 .Include(p => p.Itens)
-                .Where(p => p.LojaId == loja && p.Data.Value.Month == DateTime.Now.Month && p.Status.Id == 3)
+                .Where(p => p.LojaId == loja && p.Data.Value.Month == DateTime.Now.Month && p.Status.Id == 7)// somente pedidos entregues
                 .AsNoTracking().ToList();
-                mensageiro.Dados = xx;
+                mensageiro.Dados = pedidos;
             }
             catch (Exception ex)
             {
@@ -209,7 +209,7 @@ namespace AllDelivery.Api.Controllers
             try 
             {
                 var xx = _context.Pedidos.Include(p => p.Itens)
-                .Where(p => p.LojaId == loja && p.Data.Value.Month == DateTime.Now.Month && p.Status.Id == 3)
+                .Where(p => p.LojaId == loja && p.Data.Value.Month == DateTime.Now.Month && p.Status.Id == 7)// somente pedidos entregues
                 .Sum(p => p.Itens.Sum(x => x.Preco * x.Quantidade) + p.Loja.TaxaEntrega);
                 mensageiro.Dados = xx;
             }
@@ -229,7 +229,7 @@ namespace AllDelivery.Api.Controllers
             {
                 var xx = _context.Pedidos
                 .Include(p => p.Itens)
-                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.Date && p.Status.Id == 3)
+                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.Date && p.Status.Id == 7)
                 .AsNoTracking().ToList();
                 mensageiro.Dados = xx;
             }
@@ -250,8 +250,8 @@ namespace AllDelivery.Api.Controllers
             try 
             {
                 var xx = _context.Pedidos.Include(p => p.Itens)
-                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.Date && p.Status.Id == 3)
-                .Sum(p => p.Itens.Sum(x => x.Preco * x.Quantidade) + p.Loja.TaxaEntrega); ;
+                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.Date && p.Status.Id == 7)
+                .Sum(p => p.Itens.Sum(x => x.Preco * x.Quantidade) + p.Loja.TaxaEntrega);
                 mensageiro.Dados = xx;
             }
             catch(Exception ex) 
@@ -270,7 +270,7 @@ namespace AllDelivery.Api.Controllers
             try 
             {
                 var xx = _context.Pedidos.Include(p => p.Itens)
-                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Status.Id == 3)
+                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Status.Id == 7)
                 .AsNoTracking().ToList();
                 mensageiro.Dados = xx;
             }
@@ -291,7 +291,7 @@ namespace AllDelivery.Api.Controllers
             try 
             {
                 var xx = _context.Pedidos.Include(p => p.Itens)
-                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Status.Id == 3)
+                .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Status.Id == 7)
                 .Sum(p => p.Itens.Sum(x => x.Preco * x.Quantidade) + p.Loja.TaxaEntrega);
                 mensageiro.Dados = xx;
             }
@@ -311,13 +311,13 @@ namespace AllDelivery.Api.Controllers
 
             try 
             {
-                var usuarios = _context.Pedidos.Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Status.Id == 3)
+                var usuarios = _context.Pedidos.Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Status.Id == 7)
                 .GroupBy(p => p.UsuarioId)
                 .Select(p => p.Key).ToList();
 
                 var usuariosAntigos = _context.Pedidos.Where(p => p.LojaId == loja &&
                 p.Data.Value.Date < DateTime.Now.AddDays(-2).Date &&
-                usuarios.Contains(p.UsuarioId) && p.Status.Id == 3)
+                usuarios.Contains(p.UsuarioId) && p.Status.Id == 7)
                     .GroupBy(p => p.UsuarioId)
                     .Select(p => p.Key).ToList();
 
@@ -341,18 +341,18 @@ namespace AllDelivery.Api.Controllers
             try 
             {
                 //busca os pedidos de 2 dias atrás
-                var usuarios = _context.Pedidos.Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date)
+                var usuarios = _context.Pedidos.Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Status.Id == 7)
                     .GroupBy(p => p.UsuarioId)
                     .Select(p => p.Key).ToList();
                 //buscar todos os pedidos realizados anteriormente 
-                var usuariosAntigos = _context.Pedidos.Where(p => p.LojaId == loja && p.Data.Value.Date < DateTime.Now.AddDays(-2).Date && usuarios.Contains(p.UsuarioId))
+                var usuariosAntigos = _context.Pedidos.Where(p => p.LojaId == loja && p.Data.Value.Date < DateTime.Now.AddDays(-2).Date && usuarios.Contains(p.UsuarioId) && p.Status.Id == 7)
                     .GroupBy(p => p.UsuarioId)
                     .Select(p => p.Key).ToList();
                 //pega somente os usuários que não fizeram pedidos anteriormente
                 var novos = usuarios.Except(usuariosAntigos);
 
                 mensageiro.Dados = _context.Pedidos.Include(p => p.Itens)
-                    .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && novos.Contains(p.UsuarioId))
+                    .Where(p => p.LojaId == loja && p.Data.Value.Date == DateTime.Now.AddDays(-2).Date && novos.Contains(p.UsuarioId) && p.Status.Id == 7)
                     .Sum(p => p.Itens.Sum(q => q.Quantidade * q.Preco) + p.Loja.TaxaEntrega);
             }
             catch (Exception ex)
@@ -364,33 +364,33 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
-        //[HttpGet("obterprodutomaisvendido")]
-        //public async Task<IActionResult> ObterProdutoMaisVendido(uint loja) 
-        //{
-        //    Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+        [HttpGet("obterprodutomaisvendido")]
+        public async Task<IActionResult> ObterProdutoMaisVendido(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
 
-        //    try 
-        //    {
-        //        var grp = _context.PedidoItens
-        //                           .Include(p => p.Pedido)
-        //                           .Include(p => p.Produto)
-        //                           .Where(p => p.Pedido.LojaId == loja && p.Pedido.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Pedido.Status.Id == 3)
-        //                           .ToList()
-        //                           .GroupBy(p => p.Produto);
+            try
+            {
+                var grp = _context.PedidoItens
+                                   .Include(p => p.Pedido)
+                                   .Include(p => p.Produto)
+                                   .Where(p => p.Pedido.LojaId == loja && p.Pedido.Data.Value.Date == DateTime.Now.AddDays(-2).Date && p.Pedido.Status.Id == 7)
+                                   .ToList()
+                                   .GroupBy(p => p.Produto);
 
-        //        mensageiro.Dados = grp.Select(p => new { Produto = p.Key, Total = p.Sum(x => x.Quantidade) })
-        //                    .OrderByDescending(p => p.Total)
-        //                    .FirstOrDefault().Produto;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        mensageiro.Codigo = 300;
-        //        mensageiro.Mensagem = ex.Message;
-        //    }
-           
-        //    return Ok(mensageiro);
-        //}
-       
+                mensageiro.Dados = grp.Select(p => new { Produto = p.Key, Total = p.Sum(x => x.Quantidade) })
+                            .OrderByDescending(p => p.Total)
+                            .FirstOrDefault().Produto;
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        }
+
         [HttpGet("obtersemana")]
         public async Task<IActionResult> ObterPedidosSemana(uint loja)
         {
@@ -398,7 +398,7 @@ namespace AllDelivery.Api.Controllers
             try 
             {
                 var xx = _context.Pedidos.Include(p => p.Itens)
-                .Where(p => p.LojaId == loja && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date && p.Status.Id == 3)
+                .Where(p => p.LojaId == loja && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date && p.Status.Id == 7)
                 .AsNoTracking().ToList();
                 mensageiro.Dados = xx;
             }
@@ -419,7 +419,7 @@ namespace AllDelivery.Api.Controllers
             {
 
                 var soma = _context.Pedidos.Include(p => p.Itens)
-                    .Where(p => p.LojaId == loja && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date && p.Status.Id == 3)
+                    .Where(p => p.LojaId == loja && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date && p.Status.Id == 7)
                     .Sum(p => p.Itens.Sum(x => x.Preco * x.Quantidade) + taxa);
 
                 mensageiro.Dados = soma;
@@ -443,7 +443,7 @@ namespace AllDelivery.Api.Controllers
 
                 var dias = _context.Pedidos
                     .Include(p => p.Itens)
-                    .Where(p => p.LojaId == loja && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date && p.Status.Id == 3)
+                    .Where(p => p.LojaId == loja && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date && p.Status.Id == 7)
                     .AsNoTracking()
                     .ToList()
                     .GroupBy(p => new { DiaSemana = p.Data.Value.DayOfWeek })
@@ -481,7 +481,7 @@ namespace AllDelivery.Api.Controllers
 
                 var dias = _context.Pedidos
                     .Include(p => p.Itens)
-                    .Where(p => p.LojaId == loja && p.Data.Value.Date <= DateTime.Now.AddDays(-7).Date && p.Data.Value.Date > DateTime.Now.AddDays(-14).Date && p.Status.Id == 3)
+                    .Where(p => p.LojaId == loja && p.Data.Value.Date <= DateTime.Now.AddDays(-7).Date && p.Data.Value.Date > DateTime.Now.AddDays(-14).Date && p.Status.Id == 7)
                     .AsNoTracking()
                     .ToList()
                     .GroupBy(p => new { DiaSemana = p.Data.Value.DayOfWeek })
@@ -507,14 +507,14 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
-        [HttpGet("atrasados")]
+        [HttpGet("atrasos")]
         public async Task<IActionResult> PorcentagemAtraso(uint loja)
         {
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
             try 
             {
                 var entregasAtrasos = _context.Pedidos.Where(p => p.DataEntrega.Value > p.Data.Value.AddMinutes(p.Loja.TempoMaximo.Value)
-                 && p.LojaId == loja && p.Status.Id == 3 && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date)
+                 && p.LojaId == loja && p.Status.Id == 7 && p.Data.Value.Date > DateTime.Now.AddDays(-7).Date)
                .GroupBy(p => p.Id)
                .Select(p => p.Key).ToList();
 
@@ -528,8 +528,34 @@ namespace AllDelivery.Api.Controllers
 
             return Ok(mensageiro);
         }
-        
-        
+
+        [HttpGet("cancelamentos7d")]
+        public async Task<IActionResult> PercentualCancelamentos7D(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try
+            {   
+                var entregas = _context.Pedidos.Include(p=> p.Status).Where(p => p.LojaId == loja && (p.Status.Id == 7 || p.Status.Id == 8 || p.Status.Id == 11) &&
+                                                           p.Data.Value.Date >= DateTime.Now.AddDays(-7).Date).ToList();
+
+                try {
+                    var cancelados = entregas.Count(p => p.Status.Id == 8 || p.Status.Id == 11);
+                mensageiro.Dados = cancelados / (entregas.Count() * 1.0);
+                }
+                catch {
+                    mensageiro.Dados = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+
+            return Ok(mensageiro);
+        }
+
+
         [HttpPost("salvaravaliacao")]
         public async Task<Mensageiro> SalvarAvaliacao(Pedido pedido)
         {
