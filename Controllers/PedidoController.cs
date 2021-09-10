@@ -124,7 +124,7 @@ namespace AllDelivery.Api.Controllers
                     })                    
                     , indice, tamanho);
 
-                object list = new Paginar<Object>(page.Itens.Select(p => new
+                Paginar<Object> list = new Paginar<Object>(page.Itens.Select(p => new
                 {
                     Id = p.Id,
                     Loja = p.Loja.NomeFantasia,
@@ -140,7 +140,7 @@ namespace AllDelivery.Api.Controllers
                     DiasAvaliacao = DateTime.Now.Date.Subtract(p.Data.Value).Days
                 }).ToList<object>(), page.Itens.Count, indice, tamanho);
 
-                mensageiro.Dados = list;
+                mensageiro.Dados = list.Itens;
             }
             catch (Exception ex)
             {
@@ -585,6 +585,262 @@ namespace AllDelivery.Api.Controllers
                 mensageiro.Dados = ex.StackTrace;
             }
 
+            return mensageiro;
+        }
+                
+        [HttpGet("obterpedidosloja")]
+        public async Task<Mensageiro> ObterPedidosLoja(uint loja, DateTime dtlocal)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                DateTime dtInicio = DateTime.UtcNow.AddHours(-dtlocal.TimeOfDay.TotalHours);
+                DateTime dtFim = DateTime.UtcNow;
+                //
+                if (DateTime.UtcNow.Date == dtlocal.Date) {
+                    dtInicio = DateTime.UtcNow.Date;
+                }
+                //
+                _context.Database.BeginTransaction();
+                //pega somente os que ainda não foram aceitos
+                var pendentes = _context.Pedidos.Include(p=> p.Status)
+                                                .Include(p=> p.Usuario)
+                                                .Include(p=> p.FormaPagamento)
+                                                .Where(p => p.Loja.Id == loja && p.Status.Id < 3)
+                                                .OrderBy(p=> p.Id).ToList();                                
+                //pega somente os que estão em separação
+                var separacao = _context.Pedidos.Include(p => p.Status)
+                                                .Include(p => p.Usuario)
+                                                .Include(p => p.FormaPagamento)
+                                                .Where(p => p.Loja.Id == loja && p.Status.Id == 3)
+                                                .OrderBy(p => p.Id).ToList();
+                //pega somente os que saíram para entrega
+                var entrega = _context.Pedidos.Include(p => p.Status)
+                                              .Include(p => p.Usuario)
+                                              .Include(p => p.FormaPagamento)
+                                              .Where(p => p.Loja.Id == loja && p.Status.Id == 6)
+                                              .OrderBy(p => p.Id).ToList();
+                //pega somente os já foram entregue
+                var entregue = _context.Pedidos.Include(p => p.Status)
+                                               .Include(p => p.Usuario)
+                                               .Include(p => p.FormaPagamento)
+                                               .Where(p => p.Loja.Id == loja && p.Status.Id == 7 && dtInicio <= p.Data.Value && dtFim >= p.Data.Value)
+                                               .OrderBy(p => p.Id).ToList();
+                //pega somente os já foram entregue
+                var cancelados = _context.Pedidos.Include(p => p.Status)
+                                                 .Include(p => p.Usuario)
+                                                 .Include(p => p.FormaPagamento)
+                                                 .Where(p => p.Loja.Id == loja && p.Status.Id > 7 && dtInicio <= p.DataCancelamento.Value && dtFim >= p.DataCancelamento.Value)
+                                                 .OrderByDescending(p => p.Id).ToList();
+                //
+                List<Pedido> pedidos = new List<Pedido>();
+                pedidos.AddRange(pendentes);
+                pedidos.AddRange(separacao);
+                pedidos.AddRange(entrega);
+                pedidos.AddRange(entregue);
+                pedidos.AddRange(cancelados);
+                mensageiro.Dados = pedidos;
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;// "Falha na operação!";
+                mensageiro.Dados = ex.StackTrace;
+            }
+
+            return mensageiro;
+        }
+
+        [HttpGet("obtertotalpedidosloja")]
+        public async Task<Mensageiro> ObterTotalPedidosloja(uint loja, DateTime dtlocal)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                DateTime dtInicio = DateTime.UtcNow.AddHours(-dtlocal.TimeOfDay.TotalHours);
+                DateTime dtFim = DateTime.UtcNow;
+
+                _context.Database.BeginTransaction();
+                //pega somente os que ainda não foram aceitos
+                mensageiro.Dados = _context.Pedidos.Where(p => p.Loja.Id == loja 
+                                                            && p.Status.Id <= 6
+                                                            || (p.Status.Id == 7 && dtInicio <= p.Data.Value && dtFim >= p.Data.Value))
+                                                    .Sum(p=> p.Itens.Sum(q=> q.Preco * q.Quantidade));
+                //
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;// "Falha na operação!";
+                mensageiro.Dados = ex.StackTrace;
+            }
+
+            return mensageiro;
+        }
+
+        [HttpGet("obteritenspedido")]
+        public async Task<Mensageiro> ObterItensPedidos(int pedido)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                
+               
+                mensageiro.Dados = _context.PedidoItens.Include(p=> p.Produto).Where(p=> p.Pedido.Id == pedido);
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;// "Falha na operação!";
+                mensageiro.Dados = ex.StackTrace;
+            }
+
+            return mensageiro;
+        }
+
+        [HttpPut("confirmar")]
+        public async Task<Mensageiro> Confirmar(Pedido pedido)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                var pd = _context.Pedidos.FirstOrDefault(p => p.Id == pedido.Id);
+                pd.StatusPedidoId = pedido.Status.Id;
+                pd.AtendenteId = pedido.Atendente.Id;
+                _context.Entry(pd).Property(p => p.StatusPedidoId).IsModified = true;
+                _context.Entry(pd).Property(p => p.AtendenteId).IsModified = true;
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;// "Falha na operação!";
+                mensageiro.Dados = ex.StackTrace;
+            }
+
+            return mensageiro;
+        }
+
+        [HttpPut("entregar")]
+        public async Task<Mensageiro> Entregar(Pedido pedido)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                var pd = _context.Pedidos.FirstOrDefault(p => p.Id == pedido.Id);
+                pd.StatusPedidoId = pedido.Status.Id;                
+                _context.Entry(pd).Property(p => p.StatusPedidoId).IsModified = true;                
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;// "Falha na operação!";
+                mensageiro.Dados = ex.StackTrace;
+            }
+
+            return mensageiro;
+        }
+
+        [HttpPut("concluir")]
+        public async Task<Mensageiro> Concluir(Pedido pedido)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                var pd = _context.Pedidos.FirstOrDefault(p => p.Id == pedido.Id);
+                pd.StatusPedidoId = pedido.Status.Id;
+                pd.DataEntrega = DateTime.UtcNow;
+                _context.Entry(pd).Property(p => p.StatusPedidoId).IsModified = true;
+                _context.Entry(pd).Property(p => p.DataEntrega).IsModified = true;
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;// "Falha na operação!";
+                mensageiro.Dados = ex.StackTrace;
+            }
+
+            return mensageiro;
+        }
+
+        [HttpPut("cancelar")]
+        public async Task<Mensageiro> Cancelar(Pedido pedido)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                var pd = _context.Pedidos.FirstOrDefault(p => p.Id == pedido.Id);
+                pd.StatusPedidoId = pedido.Status.Id;
+                pd.AtendenteId = pedido.Atendente.Id;
+                pd.DataCancelamento = DateTime.UtcNow;
+                _context.Entry(pd).Property(p => p.StatusPedidoId).IsModified = true;
+                _context.Entry(pd).Property(p => p.AtendenteId).IsModified = true;
+                _context.Entry(pd).Property(p => p.DataCancelamento).IsModified = true;
+                _context.Entry(pd).Property(p => p.JustificativaCancelamento).IsModified = true;
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;// "Falha na operação!";
+                mensageiro.Dados = ex.StackTrace;
+            }
+
+            return mensageiro;
+        }
+
+        [HttpGet("obterpedidos")]
+        public async Task<Mensageiro> ObterPedidos(int loja, DateTime dtini, DateTime dtfim, string filtro, int indice, int tamanho)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                if (string.IsNullOrEmpty(filtro))
+                {
+                    mensageiro.Dados = await Paginar<Pedido>.CreateAsync(_context.Pedidos
+                                                                        .Where(p => p.Loja.Id == loja && p.Data.Value.Date >= dtini.Date && p.Data.Value.Date <= dtfim.Date)
+                                                                        .Include(p => p.Atendente)
+                                                                        .Include(p => p.FormaPagamento)
+                                                                        .Include(p => p.Itens)
+                                                                        .OrderByDescending(p => p.Id), indice, tamanho);
+                }
+                else
+                {
+                    mensageiro.Dados = await Paginar<Pedido>.CreateAsync(_context.Pedidos
+                                                                        .Where(p => p.Loja.Id == loja && p.Id.ToString().Contains(filtro)
+                                                                        && p.Data.Value.Date >= dtini.Date && p.Data.Value.Date <= dtfim.Date)
+                                                                        .Include(p => p.Atendente)
+                                                                        .Include(p => p.FormaPagamento)
+                                                                        .Include(p => p.Itens)
+                                                                        .OrderByDescending(p => p.Id), indice, tamanho);
+                }
+                           
+            }
+            catch (Exception ex) {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
             return mensageiro;
         }
     }

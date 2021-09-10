@@ -36,6 +36,7 @@ namespace AllDelivery.Api.Controllers
             try 
             {
                 var xx = _context.Lojas.FirstOrDefault(p => p.Id == loja);
+                xx._Location = new Ponto(xx.Location.X, xx.Location.Y);
                 mensageiro.Dados = xx;
             }
             catch (Exception ex)
@@ -401,7 +402,7 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpGet("paginar")]
-        public async Task<Paginar<Loja>> Paginar(int indice, int tamanho,double lat, double lon, TipoOrdenacao tipoOrdenacao)
+        public async Task<List<Loja>> Paginar(int indice, int tamanho,double lat, double lon, TipoOrdenacao tipoOrdenacao)
         {
             Paginar<Loja> valores = null;
             //
@@ -485,7 +486,7 @@ namespace AllDelivery.Api.Controllers
                     break;
             }
            
-            return valores;
+            return valores.Itens;
         }
 
         [HttpGet("logo")]
@@ -523,6 +524,29 @@ namespace AllDelivery.Api.Controllers
                                                  .Where(p => p.Loja.Id == loja)
                                                  .Select(p=> p.FormaPagamento);
             return Ok(formas);
+        }
+
+        [HttpPut("abrirfechar")]
+        public async Task<IActionResult> AbrirFechar(Loja loja)
+        {
+            Mensageiro mensageiro = new Mensageiro();
+            mensageiro.Codigo = 200;
+            mensageiro.Mensagem = "Operação realizada com sucesso!";
+            try
+            {
+                _context.Database.BeginTransaction();
+                _context.Attach(loja);                
+                _context.Entry<Loja>(loja).Property(p => p.Disponivel).IsModified = true;
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = "Falha ao realizar a operação!";
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
         }
 
         public string GeneratePassword(int Size)

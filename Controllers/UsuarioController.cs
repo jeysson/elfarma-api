@@ -138,11 +138,13 @@ namespace AllDelivery.Api.Controllers
                     }
                     else
                     {
+                        mensageiro.Codigo = 300;
                         mensageiro.Mensagem = "Usuário ou senha inválido!";
                     }
                 }
                 else
                 {
+                    mensageiro.Codigo = 300;
                     mensageiro.Mensagem = "Usuário ou senha inválido!";
                 }
                 _context.Database.CommitTransaction();

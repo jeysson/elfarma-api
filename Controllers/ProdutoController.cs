@@ -79,33 +79,74 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpGet("paginar")]
-        public async Task<Paginar<Produto>> Paginar(int loja, int grupo, int indice, int tamanho)
+        public async Task<List<Produto>> Paginar(int loja, int grupo, int indice, int tamanho)
         {
-            if(grupo == -1)
-                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja && p.Ativo), indice, tamanho);
+            Paginar<Produto> produtos;
+
+            if (grupo == -1)
+                produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja && p.Ativo), indice, tamanho);
             else
-            return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p=> p.Ativo && p.Loja.Id == loja && p.GrupoProdutos.Count(p=> p.GrupoId == grupo )> 0),  indice, tamanho);
+            produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p=> p.Ativo && p.Loja.Id == loja && p.GrupoProdutos.Count(p=> p.GrupoId == grupo )> 0),  indice, tamanho);
+
+            return produtos.Itens;
         }
 
         [HttpGet("buscarporloja")]
-        public async Task<Paginar<Produto>> BuscarPorLoja(int loja, string nomeproduto, int indice, int tamanho)
+        public async Task<List<Produto>> BuscarPorLoja(int loja, string nomeproduto, int indice, int tamanho)
         {
+            Paginar<Produto> produtos;
+
             if (!string.IsNullOrEmpty(nomeproduto))
             {
-                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja &&
+                produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja &&
                 (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))).Include(p=> p.ProdutoFotos), indice, tamanho);
             }
             else {
-                return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja).Include(p=> p.ProdutoFotos), indice, tamanho);
+                produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja).Include(p=> p.ProdutoFotos), indice, tamanho);
             }
+
+            return produtos.Itens;
+        }
+
+        [HttpGet("buscarporloja2")]
+        public async Task<Mensageiro> BuscarPorLoja2(int loja, string nomeproduto, int indice, int tamanho)
+        {
+            Mensageiro meng = new Mensageiro();
+            meng.Codigo = 200;
+            meng.Mensagem = "Operação realizada com sucesso!";
+            try
+            {
+                Paginar<Produto> produtos;
+
+                if (!string.IsNullOrEmpty(nomeproduto))
+                {
+                    produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja &&
+                    (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper())))
+                        .Include(p => p.Categoria).Include(p => p.Marca).Include(p => p.UnidadeMedida), indice, tamanho);
+                }
+                else
+                {
+                    produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja)
+                        .Include(p => p.Categoria).Include(p => p.Marca).Include(p => p.UnidadeMedida), indice, tamanho);
+                }
+
+                meng.Dados = produtos;
+            }
+            catch (Exception ex) {
+                meng.Codigo = 300;
+                meng.Mensagem = "Ocorreu uma falha ao buscar os produtos!";
+            }
+            return meng;
         }
 
         [HttpGet("buscar")]
-        public async Task<Paginar<Produto>> Buscar(string nomeproduto, int indice, int tamanho)
+        public async Task<List<Produto>> Buscar(string nomeproduto, int indice, int tamanho)
         {
-            return await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) ||
+            var produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) ||
              p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))
                 .Include(p => p.Loja).Include(p => p.ProdutoFotos).OrderBy(p => p.Preco), indice, tamanho);
+
+            return produtos.Itens;
         }
 
         [HttpGet("imagensgrupo")]
