@@ -179,29 +179,28 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
-        //[HttpPost("salvar")]
-        //public async Task<IActionResult> Salvar(uint? loja, List<LojaFormaPagamento> formas)
-        //{
-        //    Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
-        //    try
-        //    {
-        //        _context.Database.BeginTransaction();
+        [HttpPost("salvar")]
+        public async Task<IActionResult> Salvar(List<LojaFormaPagamento> formas)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();                                
+                _context.LojaFormaPagamentos.RemoveRange(_context.LojaFormaPagamentos.Where(p => p.LojaId == formas.FirstOrDefault().LojaId));                
+                _context.LojaFormaPagamentos.AddRange(formas);
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+                
+            }
 
-        //        formas.ForEach(o => o.FormaPagamento = null);
-        //        _context.LojaFormaPagamentos.RemoveRange(_context.LojaFormaPagamentos.Where(p => p.LojaId == lojaId));
-        //        _context.LojaFormaPagamentos.AddRange(formas);
-        //        _context.SaveChanges();
-        //        _context.Database.CommitTransaction();      
-        //    }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+                _context.Database.RollbackTransaction();
+            }
 
-        //    catch (Exception ex)
-        //    {
-        //        mensageiro.Codigo = 300;
-        //        mensageiro.Mensagem = ex.Message;
-        //        _context.Database.RollbackTransaction();
-        //    }
-
-        //    return Ok(mensageiro);
-        //}
+            return Ok(mensageiro);
+        }
     }
 }

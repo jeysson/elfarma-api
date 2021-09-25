@@ -85,6 +85,13 @@ namespace AllDelivery.Api.Controllers
                                                                     Nome = p.Status.Nome,
                                                                     Sequencia = p.Status.Sequencia
                                                                 }).OrderByDescending(p=> p.Id).ToList();
+                if (pedido.Ende[pedido.Ende.Length - 1] != '}')
+                    pedido.Ende = pedido.Ende + "}";
+                if (pedido.Ende.Contains("}}"))
+                    pedido.Ende = pedido.Ende.Replace("}", "");
+                //
+                
+                pedido.Endereco = Newtonsoft.Json.JsonConvert.DeserializeObject<Endereco>(pedido.Ende.ConvertUnicodeToText());
                 mensageiro.Dados = pedido;
             }
             catch (Exception ex)
@@ -607,7 +614,7 @@ namespace AllDelivery.Api.Controllers
                                                 .Include(p=> p.Usuario)
                                                 .Include(p=> p.FormaPagamento)
                                                 .Where(p => p.Loja.Id == loja && p.Status.Id < 3)
-                                                .OrderBy(p=> p.Id).ToList();                                
+                                                .OrderBy(p=> p.Id).ToList();                
                 //pega somente os que estão em separação
                 var separacao = _context.Pedidos.Include(p => p.Status)
                                                 .Include(p => p.Usuario)
@@ -639,6 +646,16 @@ namespace AllDelivery.Api.Controllers
                 pedidos.AddRange(entrega);
                 pedidos.AddRange(entregue);
                 pedidos.AddRange(cancelados);
+                pedidos.ForEach(o =>
+                {
+                    if (o.Ende[o.Ende.Length - 1] != '}')
+                        o.Ende = o.Ende + "}";
+                    if (o.Ende.Contains("}}"))
+                        o.Ende = o.Ende.Replace("}", "");
+                    //
+                    o.Endereco = Newtonsoft.Json.JsonConvert.DeserializeObject<Endereco>(o.Ende.ConvertUnicodeToText());
+                });
+                //
                 mensageiro.Dados = pedidos;
                 _context.Database.CommitTransaction();
             }
@@ -823,6 +840,7 @@ namespace AllDelivery.Api.Controllers
                                                                         .Include(p => p.Atendente)
                                                                         .Include(p => p.FormaPagamento)
                                                                         .Include(p => p.Itens)
+                                                                        .Include(p => p.Status)
                                                                         .OrderByDescending(p => p.Id), indice, tamanho);
                 }
                 else
@@ -833,6 +851,7 @@ namespace AllDelivery.Api.Controllers
                                                                         .Include(p => p.Atendente)
                                                                         .Include(p => p.FormaPagamento)
                                                                         .Include(p => p.Itens)
+                                                                        .Include(p => p.Status)
                                                                         .OrderByDescending(p => p.Id), indice, tamanho);
                 }
                            
@@ -842,6 +861,36 @@ namespace AllDelivery.Api.Controllers
                 mensageiro.Mensagem = ex.Message;
             }
             return mensageiro;
+        }
+
+        [HttpGet("obterprodutosvendidos")]
+        public async Task<IActionResult> ObterProdutosVendidos(int loja, DateTime dtini, DateTime dtfim)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try
+            {
+                _context.Database.BeginTransaction();
+                //
+                mensageiro.Dados = _context.PedidoItens
+                                           .Include(p => p.Pedido)
+                                           .Include(p => p.Produto)
+                                           .ThenInclude(p => p.Categoria)
+                                           .Where(p => p.Pedido.Loja.Id == loja && p.Pedido.Status.Id == 7 && p.Pedido.Data.Value.Date >= dtini.Date && p.Pedido.Data.Value.Date <= dtfim.Date)
+                                        .ToList()
+                                        .GroupBy(p => p.Produto)
+                                        .Select(p => new PedidoItem { Produto = p.Key, Quantidade = (uint?)p.Sum(q => q.Quantidade), Preco = p.Sum(q => q.Quantidade * q.Preco) })
+                                        .OrderByDescending(p=> p.Quantidade)
+                                        .ToList();            
+                
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
         }
     }
 }

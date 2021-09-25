@@ -20,13 +20,15 @@ namespace AllDelivery.Api
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            //var lf = new LoggerFactory();
-            //lf.AddProvider(new MyLoggerProvider());
-            //optionsBuilder.UseLoggerFactory(lf);
-            //optionsBuilder.EnableSensitiveDataLogging();
+            var lf = new LoggerFactory();
+            lf.AddProvider(new MyLoggerProvider());
+            optionsBuilder.UseLoggerFactory(lf);
+            optionsBuilder.EnableSensitiveDataLogging();
         }
 
         public DbSet<Loja> Lojas { get; set; }
+
+        public DbSet<LojaTarifa> LojaTarifas { get; set; }
 
         public DbSet<Produto> Produtos { get; set; }
 
@@ -57,6 +59,10 @@ namespace AllDelivery.Api
         public DbSet<Categoria> Categorias { get; set; }
 
         public DbSet<Marca> Marcas { get; set; }
+
+        public DbSet<CompromissoFinanceiro> CompromissoFinanceiros { get; set; }
+
+        public DbSet<Horario> Horarios { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

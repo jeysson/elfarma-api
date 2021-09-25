@@ -99,46 +99,19 @@ namespace AllDelivery.Api.Controllers
             if (!string.IsNullOrEmpty(nomeproduto))
             {
                 produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja &&
-                (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))).Include(p=> p.ProdutoFotos), indice, tamanho);
+                (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))).Include(p=> p.ProdutoFotos).Include(p=> p.Loja), indice, tamanho);
             }
             else {
-                produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja).Include(p=> p.ProdutoFotos), indice, tamanho);
+                produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja).Include(p=> p.ProdutoFotos).Include(p => p.Loja), indice, tamanho);
             }
+
+            produtos.Itens.ForEach(o => {
+                o.Loja = new Loja { Id = o.Loja.Id };
+            });
 
             return produtos.Itens;
         }
-
-        [HttpGet("buscarporloja2")]
-        public async Task<Mensageiro> BuscarPorLoja2(int loja, string nomeproduto, int indice, int tamanho)
-        {
-            Mensageiro meng = new Mensageiro();
-            meng.Codigo = 200;
-            meng.Mensagem = "Operação realizada com sucesso!";
-            try
-            {
-                Paginar<Produto> produtos;
-
-                if (!string.IsNullOrEmpty(nomeproduto))
-                {
-                    produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja &&
-                    (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper())))
-                        .Include(p => p.Categoria).Include(p => p.Marca).Include(p => p.UnidadeMedida), indice, tamanho);
-                }
-                else
-                {
-                    produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja)
-                        .Include(p => p.Categoria).Include(p => p.Marca).Include(p => p.UnidadeMedida), indice, tamanho);
-                }
-
-                meng.Dados = produtos;
-            }
-            catch (Exception ex) {
-                meng.Codigo = 300;
-                meng.Mensagem = "Ocorreu uma falha ao buscar os produtos!";
-            }
-            return meng;
-        }
-
+                
         [HttpGet("buscar")]
         public async Task<List<Produto>> Buscar(string nomeproduto, int indice, int tamanho)
         {
@@ -236,5 +209,149 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
+        #region Operações pela loja
+        [HttpGet("buscarporloja2")]
+        public async Task<Mensageiro> BuscarPorLoja2(int loja, string nomeproduto, int indice, int tamanho)
+        {
+            Mensageiro meng = new Mensageiro();
+            meng.Codigo = 200;
+            meng.Mensagem = "Operação realizada com sucesso!";
+            try
+            {
+                Paginar<Produto> produtos;
+
+                if (!string.IsNullOrEmpty(nomeproduto))
+                {
+                    produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja &&
+                    (p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) || p.Descricao.ToUpper().Contains(nomeproduto.ToUpper())))
+                        .Include(p => p.Categoria).Include(p => p.Marca).Include(p => p.UnidadeMedida), indice, tamanho);
+                }
+                else
+                {
+                    produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja)
+                        .Include(p => p.Categoria).Include(p => p.Marca).Include(p => p.UnidadeMedida), indice, tamanho);
+                }
+
+                meng.Dados = produtos;
+            }
+            catch (Exception ex)
+            {
+                meng.Codigo = 300;
+                meng.Mensagem = "Ocorreu uma falha ao buscar os produtos!";
+            }
+            return meng;
+        }
+
+
+        [HttpPost("cadastrarproduto")]
+        public async Task<IActionResult> CadastrarProduto(Produto produto)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try
+            {
+                _context.Database.BeginTransaction();
+
+                produto.LojaId = produto.Loja.Id;
+                produto.Loja = null;
+                produto.MarcaId = produto.Marca.Id;
+                produto.Marca = null;
+                produto.UnidadeMedidaId = produto.UnidadeMedida.Id;
+                produto.UnidadeMedida = null;
+                produto.CategoriaId = produto.Categoria.Id;
+                produto.Categoria = null;
+
+                _context.Produtos.Add(produto);
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpPut("atualizarproduto")]
+        public async Task<IActionResult> AtualizarProduto(Produto produto)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try
+            {
+                _context.Database.BeginTransaction();
+                //
+                _context.ProdutoFotos.RemoveRange(_context.ProdutoFotos.Where(p => p.ProdutoId == produto.Id));
+                _context.ProdutoFotos.AddRange(produto.ProdutoFotos);
+                //                
+                _context.Entry(produto).Property(p => p.MarcaId).IsModified = true;
+                _context.Entry(produto).Property(p => p.UnidadeMedidaId).IsModified = true;
+                _context.Entry(produto).Property(p => p.CategoriaId).IsModified = true;
+                _context.Entry(produto).Property(p => p.Nome).IsModified = true;
+                _context.Entry(produto).Property(p => p.Descricao).IsModified = true;
+                _context.Entry(produto).Property(p => p.Preco).IsModified = true;
+                _context.Entry(produto).Property(p => p.PrecoPromocional).IsModified = true;
+                _context.Entry(produto).Property(p => p.Ativo).IsModified = true;
+                //
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpPut("inativarproduto")]
+        public async Task<IActionResult> InativarProduto(Produto produto)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try
+            {
+                _context.Database.BeginTransaction();
+                //                
+                _context.Entry(produto).Property(p => p.Ativo).IsModified = true;
+                //
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpDelete("excluirproduto")]
+        public async Task<IActionResult> ExcluirProduto(int id)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try
+            {
+                _context.Database.BeginTransaction();
+                //
+                _context.ProdutoFotos.RemoveRange(_context.ProdutoFotos.Where(p => p.ProdutoId == id).AsNoTracking());
+                _context.Produtos.Remove(_context.Produtos.FirstOrDefault(p=> p.Id == id));
+                _context.SaveChanges();
+                //
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
+        #endregion
+
+
+       
     }
 }

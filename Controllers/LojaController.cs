@@ -549,6 +549,79 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
+        [HttpGet("obtertarifas")]
+        public async Task<IActionResult> ObterTarifas(uint loja)
+        {
+            Mensageiro mensageiro = new Mensageiro();
+            mensageiro.Codigo = 200;
+            mensageiro.Mensagem = "Operação realizada com sucesso!";
+            try
+            {
+                _context.Database.BeginTransaction();
+                mensageiro.Dados = _context.LojaTarifas.FirstOrDefault(p => p.Loja.Id == loja && p.DtInicio.Value.Date <= DateTime.Now.Date && p.DtFim.Value.Date >= DateTime.Now.Date);
+                _context.Database.CommitTransaction();
+            }
+            catch
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = "Falha ao realizar a operação!";
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("compromissofinanceiro")]
+        public async Task<IActionResult> CompromissoFinanceiro(uint loja, int indice, int tamanho)
+        {
+            Mensageiro mensageiro = new Mensageiro();
+            mensageiro.Codigo = 200;
+            mensageiro.Mensagem = "Operação realizada com sucesso!";
+            try
+            {
+                _context.Database.BeginTransaction();
+                mensageiro.Dados = await Paginar<CompromissoFinanceiro>.CreateAsync(_context.CompromissoFinanceiros
+                                           .Where(p => p.Loja.Id == loja).Select(p=> new CompromissoFinanceiro { 
+                                           Id = p.Id,
+                                           DataEmissao = p.DataEmissao,
+                                           DataPagamento = p.DataPagamento,
+                                           DataReferencia = p.DataReferencia,
+                                           DataVencimento = p.DataVencimento,
+                                           Descricao = p.Descricao,
+                                           Valor = p.Valor
+                                           }).OrderByDescending(p=> p.DataReferencia)
+                                           , indice, tamanho);
+                _context.Database.CommitTransaction();
+            }
+            catch
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = "Falha ao realizar a operação!";
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
+        [HttpGet("download")]
+        public async Task<IActionResult> Download(uint id)
+        {
+            Mensageiro mensageiro = new Mensageiro();
+            mensageiro.Codigo = 200;
+            mensageiro.Mensagem = "Operação realizada com sucesso!";
+            try
+            {
+                _context.Database.BeginTransaction();
+                mensageiro.Dados = _context.CompromissoFinanceiros.FirstOrDefault(p => p.Id == id);
+                _context.Database.CommitTransaction();
+            }
+            catch
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = "Falha ao realizar a operação!";
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
         public string GeneratePassword(int Size)
         {
             string randomno = "abcdefghijklmnopqrstuvwyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
