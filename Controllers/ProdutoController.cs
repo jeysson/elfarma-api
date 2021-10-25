@@ -25,9 +25,20 @@ namespace AllDelivery.Api.Controllers
         [HttpGet("todos")]
         public IEnumerable<Produto> Todos(int loja)
         {
-            return _context.Produtos.Include(p=> p.GrupoProdutos)
+            var dados = _context.Produtos.Include(p => p.Loja).Include(p=> p.GrupoProdutos)
                 .ThenInclude(p=> p.Grupo)
-                .Where(p => p.GrupoProdutos.Count > 0 && p.Ativo && p.Loja.Id == loja);
+                .Where(p => p.GrupoProdutos.Count > 0 && p.Ativo && p.Loja.Id == loja).ToList();
+
+            //
+            dados.ForEach(p =>
+            {
+                p.Loja.Banner = null;
+                p.Loja.Logo = null;
+                p.Loja.ImgBanner = null;
+                p.Loja.ImgLogo = null;
+            });
+
+            return dados;
         }
 
         [HttpGet("grupos")]
@@ -52,7 +63,10 @@ namespace AllDelivery.Api.Controllers
 
                 o.Products.ForEach(p =>
                 {
-                    p.Loja = new Loja() { Id = p.Loja.Id };
+                    p.Loja.ImgLogo = null;
+                    p.Loja.ImgBanner = null;
+                    p.Loja.Logo = null;
+                    p.Loja.Banner = null;
                 });
             });
 
@@ -63,10 +77,20 @@ namespace AllDelivery.Api.Controllers
         [HttpGet("produtosgrupo")]
         public IEnumerable<Produto> ProdutosGrupo(int loja, int grupo)
         {
-            return _context.Produtos.Include(p => p.GrupoProdutos)
+            var dados = _context.Produtos.Include(p=> p.Loja).Include(p => p.GrupoProdutos)
                 .ThenInclude(p => p.Grupo)
                 .Where(p => p.GrupoProdutos.Where(p=> p.Produto.Ativo)
-                                           .Count(z=> z.GrupoId == grupo) > 0 && p.Loja.Id == loja);
+                                           .Count(z=> z.GrupoId == grupo) > 0 && p.Loja.Id == loja).ToList();
+            //
+            dados.ForEach(p =>
+            {
+                p.Loja.Banner = null;
+                p.Loja.Logo = null;
+                p.Loja.ImgBanner = null;
+                p.Loja.ImgLogo = null;
+            });
+
+            return dados;
         }
 
         [HttpGet("imagens")]
@@ -84,9 +108,18 @@ namespace AllDelivery.Api.Controllers
             Paginar<Produto> produtos;
 
             if (grupo == -1)
-                produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Loja.Id == loja && p.Ativo), indice, tamanho);
+                produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Include(p=> p.Loja).Where(p => p.Loja.Id == loja && p.Ativo), indice, tamanho);
             else
-            produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p=> p.Ativo && p.Loja.Id == loja && p.GrupoProdutos.Count(p=> p.GrupoId == grupo )> 0),  indice, tamanho);
+            produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Include(p => p.Loja).Where(p=> p.Ativo && p.Loja.Id == loja && p.GrupoProdutos.Count(p=> p.GrupoId == grupo )> 0),  indice, tamanho);
+
+            //
+            produtos.Itens.ForEach(p =>
+            {
+                p.Loja.Banner = null;
+                p.Loja.Logo = null;
+                p.Loja.ImgBanner = null;
+                p.Loja.ImgLogo = null;
+            });
 
             return produtos.Itens;
         }
@@ -106,9 +139,12 @@ namespace AllDelivery.Api.Controllers
             }
 
             produtos.Itens.ForEach(o => {
-                o.Loja = new Loja { Id = o.Loja.Id };
-            });
-
+                o.Loja.Banner = null;
+                o.Loja.Logo = null;
+                o.Loja.ImgBanner = null;
+                o.Loja.ImgLogo = null;
+            });           
+            //
             return produtos.Itens;
         }
                 

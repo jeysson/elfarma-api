@@ -892,5 +892,35 @@ namespace AllDelivery.Api.Controllers
             }
             return Ok(mensageiro);
         }
+
+        [HttpGet("ultimopedido")]
+        public async Task<IActionResult> ObterUltimoPedido(uint codUser)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            try
+            {
+                _context.Database.BeginTransaction();
+                //
+                mensageiro.Dados = _context.Pedidos
+                                           .Include(p => p.Atendente)
+                                           .Include(p => p.FormaPagamento)
+                                           .Include(p => p.Itens)
+                                           .Include(p => p.Status)
+                                           .Where(p => p.Usuario.Id == codUser && p.Status.Id < 7)
+                                           .OrderByDescending(p=> p.Data)
+                                           .FirstOrDefault();
+                                           
+                                        
+
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = ex.Message;
+            }
+            return Ok(mensageiro);
+        }
     }
 }
