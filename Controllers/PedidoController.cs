@@ -648,12 +648,17 @@ namespace AllDelivery.Api.Controllers
                 pedidos.AddRange(cancelados);
                 pedidos.ForEach(o =>
                 {
-                    if (o.Ende[o.Ende.Length - 1] != '}')
-                        o.Ende = o.Ende + "}";
-                    if (o.Ende.Contains("}}"))
-                        o.Ende = o.Ende.Replace("}", "");
-                    //
-                    o.Endereco = Newtonsoft.Json.JsonConvert.DeserializeObject<Endereco>(o.Ende.ConvertUnicodeToText());
+                    if (!string.IsNullOrEmpty(o.Ende))
+                    {                        
+                        if (o.Ende[o.Ende.Length - 1] != '}')
+                            o.Ende = o.Ende + "}";
+                        if (o.Ende.Contains("}}"))
+                            o.Ende = o.Ende.Replace("}", "");
+                        if (o.Ende[o.Ende.Length - 2] != '"' && !o.Ende.Contains("Longi"))
+                            o.Ende = o.Ende.Replace(o.Ende[o.Ende.Length - 2] + o.Ende[o.Ende.Length - 1].ToString(), o.Ende[o.Ende.Length - 2] + "\"");
+                        //
+                        o.Endereco = Newtonsoft.Json.JsonConvert.DeserializeObject<Endereco>(o.Ende.ConvertUnicodeToText());                        
+                    }
                 });
                 //
                 mensageiro.Dados = pedidos;

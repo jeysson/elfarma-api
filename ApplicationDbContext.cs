@@ -20,10 +20,10 @@ namespace AllDelivery.Api
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var lf = new LoggerFactory();
-            lf.AddProvider(new MyLoggerProvider());
-            optionsBuilder.UseLoggerFactory(lf);
-            optionsBuilder.EnableSensitiveDataLogging();
+            //var lf = new LoggerFactory();
+            //lf.AddProvider(new MyLoggerProvider());
+            //optionsBuilder.UseLoggerFactory(lf);
+            //optionsBuilder.EnableSensitiveDataLogging();
         }
 
         public DbSet<Loja> Lojas { get; set; }
