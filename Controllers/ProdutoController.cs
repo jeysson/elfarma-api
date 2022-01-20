@@ -25,10 +25,11 @@ namespace AllDelivery.Api.Controllers
         [HttpGet("todos")]
         public IEnumerable<Produto> Todos(int loja)
         {
+            var tarifa = _context.LojaTarifas.FirstOrDefault(p => p.Loja.Id == loja);
+            //
             var dados = _context.Produtos.Include(p => p.Loja).Include(p=> p.GrupoProdutos)
                 .ThenInclude(p=> p.Grupo)
                 .Where(p => p.GrupoProdutos.Count > 0 && p.Ativo && p.Loja.Id == loja).ToList();
-
             //
             dados.ForEach(p =>
             {
@@ -36,6 +37,9 @@ namespace AllDelivery.Api.Controllers
                 p.Loja.Logo = null;
                 p.Loja.ImgBanner = null;
                 p.Loja.ImgLogo = null;
+                //
+                if (p.Loja.IncluirComissao)
+                    p.Preco = (1 + tarifa.Comissao) * p.Preco;
             });
 
             return dados;
@@ -44,6 +48,8 @@ namespace AllDelivery.Api.Controllers
         [HttpGet("grupos")]
         public IEnumerable<dynamic> Grupo(int loja)
         {
+            var tarifa = _context.LojaTarifas.FirstOrDefault(p => p.Loja.Id == loja);
+            //
             var grupos = _context.Grupos.Include(p => p.GrupoProdutos)
                 .ThenInclude(p => p.Produto)
                 .ThenInclude(p=> p.Loja)
@@ -67,6 +73,9 @@ namespace AllDelivery.Api.Controllers
                     p.Loja.ImgBanner = null;
                     p.Loja.Logo = null;
                     p.Loja.Banner = null;
+                    //
+                    if (p.Loja.IncluirComissao)
+                        p.Preco = (1 + tarifa.Comissao) * p.Preco;
                 });
             });
 
@@ -77,6 +86,8 @@ namespace AllDelivery.Api.Controllers
         [HttpGet("produtosgrupo")]
         public IEnumerable<Produto> ProdutosGrupo(int loja, int grupo)
         {
+            var tarifa = _context.LojaTarifas.FirstOrDefault(p => p.Loja.Id == loja);
+            //
             var dados = _context.Produtos.Include(p=> p.Loja).Include(p => p.GrupoProdutos)
                 .ThenInclude(p => p.Grupo)
                 .Where(p => p.GrupoProdutos.Where(p=> p.Produto.Ativo)
@@ -88,6 +99,9 @@ namespace AllDelivery.Api.Controllers
                 p.Loja.Logo = null;
                 p.Loja.ImgBanner = null;
                 p.Loja.ImgLogo = null;
+                //
+                if (p.Loja.IncluirComissao)
+                    p.Preco = (1 + tarifa.Comissao) * p.Preco;
             });
 
             return dados;
@@ -106,7 +120,9 @@ namespace AllDelivery.Api.Controllers
         public async Task<List<Produto>> Paginar(int loja, int grupo, int indice, int tamanho)
         {
             Paginar<Produto> produtos;
-
+            //
+            var tarifa = _context.LojaTarifas.FirstOrDefault(p => p.Loja.Id == loja);
+            //
             if (grupo == -1)
                 produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Include(p=> p.Loja).Where(p => p.Loja.Id == loja && p.Ativo), indice, tamanho);
             else
@@ -119,6 +135,9 @@ namespace AllDelivery.Api.Controllers
                 p.Loja.Logo = null;
                 p.Loja.ImgBanner = null;
                 p.Loja.ImgLogo = null;
+                //
+                if (p.Loja.IncluirComissao)
+                    p.Preco = (1 + tarifa.Comissao) * p.Preco;
             });
 
             return produtos.Itens;
@@ -128,7 +147,9 @@ namespace AllDelivery.Api.Controllers
         public async Task<List<Produto>> BuscarPorLoja(int loja, string nomeproduto, int indice, int tamanho)
         {
             Paginar<Produto> produtos;
-
+            //
+            var tarifa = _context.LojaTarifas.FirstOrDefault(p => p.Loja.Id == loja);
+            //
             if (!string.IsNullOrEmpty(nomeproduto))
             {
                 produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Loja.Id == loja &&
@@ -143,6 +164,9 @@ namespace AllDelivery.Api.Controllers
                 o.Loja.Logo = null;
                 o.Loja.ImgBanner = null;
                 o.Loja.ImgLogo = null;
+                //
+                if (o.Loja.IncluirComissao)
+                    o.Preco = (1 + tarifa.Comissao) * o.Preco;
             });           
             //
             return produtos.Itens;
@@ -150,11 +174,24 @@ namespace AllDelivery.Api.Controllers
                 
         [HttpGet("buscar")]
         public async Task<List<Produto>> Buscar(string nomeproduto, int indice, int tamanho)
-        {
+        {           
+            
             var produtos = await Paginar<Produto>.CreateAsync(_context.Produtos.Where(p => p.Ativo && p.Nome.ToUpper().Contains(nomeproduto.ToUpper()) ||
              p.Descricao.ToUpper().Contains(nomeproduto.ToUpper()))
                 .Include(p => p.Loja).Include(p => p.ProdutoFotos).OrderBy(p => p.Preco), indice, tamanho);
-
+            //
+            var lojas = produtos.Itens.GroupBy(p => p.Loja).Select(p=> p.Key);
+            //
+            foreach (var loja in lojas)
+            {
+                var tarifa = _context.LojaTarifas.FirstOrDefault(p => p.Loja.Id == loja.Id);
+                //
+                foreach (var produto in produtos.Itens.Where(p => p.Loja.Id == loja.Id))
+                {
+                    produto.Preco = (1 + tarifa.Comissao) * produto.Preco;
+                }
+            }
+            //
             return produtos.Itens;
         }
 

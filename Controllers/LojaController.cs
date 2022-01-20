@@ -130,16 +130,43 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
-                var loj = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
-                if(loja.Location == null || loja.Location.IsEmpty)
-                {
-                    loja.Location = loj.Location;
-                }
+                //var loj = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
+                //if (loja.Location == null || loja.Location.IsEmpty)
+                //{
+                //    loja.Location = loj.Location;
+                //}
                 _context.Database.BeginTransaction();
-                var cc = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
-                if (cc != null)
-                    _context.Entry<Loja>(cc).State = EntityState.Detached;
-                _context.Lojas.Update(loja);
+                //var cc = _context.Lojas.FirstOrDefault(p => p.Id == loja.Id);
+                //if (cc != null)
+                //_context.Entry<Loja>(cc).State = EntityState.Detached;
+                //_context.Lojas..Update(loja);
+                //Loja
+                _context.Entry<Loja>(loja).Property(p => p.ImgLogo).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.ImgBanner).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.NomeFantasia).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.NomeRazao).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.Descricao).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.TelefoneAlternativo).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.TelefoneCelular).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.TelefoneComercial).IsModified = true;
+                //Endereço
+                _context.Entry<Loja>(loja).Property(p => p.CEP).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.Bairro).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.Cidade).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.Endereco).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.Numero).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.Complemento).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.UF).IsModified = true;
+                loja.Location = new Point(loja._Location.X, loja._Location.Y);
+                _context.Entry<Loja>(loja).Property(p => p.Location).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.Raio).IsModified = true;
+                //Configurações
+                _context.Entry<Loja>(loja).Property(p => p.TaxaEntrega).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.TempoMaximo).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.TempoMinimo).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.Disponivel).IsModified = true;
+                _context.Entry<Loja>(loja).Property(p => p.IncluirComissao).IsModified = true;
+                //
                 _context.SaveChanges();
                 _context.Database.CommitTransaction();
             }

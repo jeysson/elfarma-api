@@ -89,7 +89,7 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
-                _context.Database.BeginTransaction();                
+                _context.Database.BeginTransaction();                   
                 _context.Grupos.Update(grupo);
                 _context.SaveChanges();
                 _context.Database.CommitTransaction();

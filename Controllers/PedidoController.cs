@@ -543,15 +543,22 @@ namespace AllDelivery.Api.Controllers
             try
             {   
                 var entregas = _context.Pedidos.Include(p=> p.Status).Where(p => p.LojaId == loja && (p.Status.Id == 7 || p.Status.Id == 8 || p.Status.Id == 11) &&
-                                                           p.Data.Value.Date >= DateTime.Now.AddDays(-7).Date).ToList();
+                
+                p.Data.Value.Date >= DateTime.Now.AddDays(-7).Date).ToList();
 
-                try {
-                    var cancelados = entregas.Count(p => p.Status.Id == 8 || p.Status.Id == 11);
-                mensageiro.Dados = cancelados / (entregas.Count() * 1.0);
+                if (entregas.Count > 0)
+                {
+                    try
+                    {
+                        var cancelados = entregas.Count(p => p.Status.Id == 8 || p.Status.Id == 11);
+                        mensageiro.Dados = cancelados / (entregas.Count() * 1.0);
+                    }
+                    catch
+                    {
+                        mensageiro.Dados = 0;
+                    }
                 }
-                catch {
-                    mensageiro.Dados = 0;
-                }
+                else mensageiro.Dados = 0;
             }
             catch (Exception ex)
             {
