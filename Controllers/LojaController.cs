@@ -64,6 +64,7 @@ namespace AllDelivery.Api.Controllers
                 loja.TaxaEntrega = 0;
                 loja.TempoMaximo = 60;
                 loja.TempoMinimo = 30;
+                loja.Raio = 5;
                 _context.Database.BeginTransaction();
                 _context.Lojas.Add(loja);
                 _context.SaveChanges();
