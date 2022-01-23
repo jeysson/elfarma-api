@@ -101,6 +101,29 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
+        [HttpPost("cadastrarlojatarifa")]
+        public async Task<IActionResult> CadastrarLojaTarifa(LojaTarifa tarifa)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
+            try
+            {
+                _context.Database.BeginTransaction();
+                _context.LojaTarifas.Add(tarifa);
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Codigo = 300;
+                if (ex.InnerException != null && ex.InnerException.Message.Contains("Duplicate entry"))
+                    mensageiro.Mensagem = "Já existe uma loja com essa sequência!";
+                else
+                    mensageiro.Mensagem = "Falha ao cadastrar!";
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
         [HttpDelete("excluir")]
         public async Task<IActionResult> Excluir(uint loja)
         {

@@ -63,22 +63,18 @@ namespace AllDelivery.Api.Controllers
                     Ordem = p.Ordem
                 ,
                     Products = p.GrupoProdutos.Where(p=> p.Produto.Ativo).Select(q => q.Produto).ToList()
-                }).ToList();
+                }).ToList();            
             //
-            grupos.ForEach(o => {
-
-                o.Products.ForEach(p =>
-                {
-                    p.Loja.ImgLogo = null;
-                    p.Loja.ImgBanner = null;
-                    p.Loja.Logo = null;
-                    p.Loja.Banner = null;
-                    //
-                    if (p.Loja.IncluirComissao)
-                        p.Preco = (1 + tarifa.Comissao) * p.Preco;
-                });
-            });
-
+            foreach (var produto in grupos.SelectMany(p => p.Products).Distinct())
+            {
+                produto.Loja.ImgLogo = null;
+                produto.Loja.ImgBanner = null;
+                produto.Loja.Logo = null;
+                produto.Loja.Banner = null;
+                //
+                if (produto.Loja.IncluirComissao)
+                    produto.Preco = (1 + tarifa.Comissao) * produto.Preco;
+            }
 
             return grupos;
         }
