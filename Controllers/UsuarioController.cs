@@ -325,7 +325,7 @@ namespace AllDelivery.Api.Controllers
             client.Port = 587;
             client.EnableSsl = true;
             client.UseDefaultCredentials = false;
-            client.Credentials = new NetworkCredential("jeysson.paiva@hashtagmobile.com.br", "j3ysson@paiva");
+            client.Credentials = new NetworkCredential("suporte@elfarma.com.br", "123456s!S");
             //
             #region Corpo Email
             StringBuilder str = new StringBuilder();
@@ -356,7 +356,7 @@ namespace AllDelivery.Api.Controllers
             str.AppendLine("		</thead>");
             str.AppendLine("		<tbody>");
             str.AppendLine("		  <tr>");
-            str.AppendLine("			<td class=\"tg-zv4m\" colspan=\"3\">Foi gerado uma senha provisória para seu acesso a plataforma. No seu primeiro acesso será solicitado a troca senha</td>");
+            str.AppendLine("			<td class=\"tg-zv4m\" colspan=\"3\">Foi gerada uma senha provisória para seu acesso a plataforma. No seu primeiro acesso será solicitado a troca de senha</td>");
             str.AppendLine("		  </tr>");
             str.AppendLine("		  <tr>");
             str.AppendLine("			<td class=\"tg-b420\" colspan=\"3\"><span style=\"color:#3166FF\">senha:</span></td>");
@@ -371,46 +371,43 @@ namespace AllDelivery.Api.Controllers
             #endregion
             //
             MailMessage mailMessage = new MailMessage();
-            mailMessage.From = new MailAddress("jeysson.paiva@hashtagmobile.com.br");
+            mailMessage.From = new MailAddress("suporte@elfarma.com.br");
             mailMessage.To.Add(email);
             mailMessage.Body = str.ToString();
-            mailMessage.Subject = "AppMed - Senha Provisória";
+            mailMessage.Subject = "ElFarma - Senha Provisória";
             mailMessage.IsBodyHtml = true;
             client.Send(mailMessage);
 
             return true;
         }
 
-        //[HttpPut("redefinir")]
-        //public async Task<IActionResult> Redefinir(Usuario usuario) 
-        //{
-        //    Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
-        //    mensageiro.Dados = false;
+        [HttpPut("redefinir")]
+        public async Task<IActionResult> Redefinir(Usuario usuario)
+        {
+            Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso");
+            mensageiro.Dados = false;
 
-        //    try
-        //    {
-        //        _context.Database.BeginTransaction();
-        //        var cc = _context.Usuarios.FirstOrDefault(p => p.Id == usuario.Id);
-        //        if (cc != null)
-        //            _context.Entry<Usuario>(cc).State = EntityState.Detached;
-        //        //
-        //        usuario.Senha = _passwordHasher.Hash(usuario.Senha);
-        //        usuario.SenhaProv = false;
-        //        _context.Attach(usuario);
-        //        _context.Entry<Usuario>(usuario).Property(p => p.Senha).IsModified = true;
-        //        _context.Entry<Usuario>(usuario).Property(p => p.SenhaProv).IsModified = true;
-        //        _context.SaveChanges();
-        //        _context.Database.CommitTransaction();
-        //    }
-        //    catch(Exception ex)
-        //    {
-        //        mensageiro.Mensagem = ex.Message;
-        //        mensageiro.Codigo = 300;
-        //        _context.Database.RollbackTransaction();
-        //    }
+            try
+            {
+                _context.Database.BeginTransaction();               
+                //
+                usuario.Senha = _passwordHasher.Hash(usuario.Senha);
+                usuario.SenhaProv = false;
+                _context.Attach(usuario);
+                _context.Entry<Usuario>(usuario).Property(p => p.Senha).IsModified = true;
+                _context.Entry<Usuario>(usuario).Property(p => p.SenhaProv).IsModified = true;
+                _context.SaveChanges();
+                _context.Database.CommitTransaction();
+            }
+            catch (Exception ex)
+            {
+                mensageiro.Mensagem = ex.Message;
+                mensageiro.Codigo = 300;
+                _context.Database.RollbackTransaction();
+            }
 
-        //    return Ok(mensageiro);
-        //}
+            return Ok(mensageiro);
+        }
 
         //public async Task<IActionResult> Cadastrar(Usuario us)
         //{

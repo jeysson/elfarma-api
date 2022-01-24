@@ -693,10 +693,10 @@ namespace AllDelivery.Api.Controllers
 
                 _context.Database.BeginTransaction();
                 //pega somente os que ainda não foram aceitos
-                mensageiro.Dados = _context.Pedidos.Where(p => p.Loja.Id == loja 
+                mensageiro.Dados = _context.Pedidos.Include(p=> p.Loja).Where(p => p.Loja.Id == loja 
                                                             && p.Status.Id <= 6
                                                             || (p.Status.Id == 7 && dtInicio <= p.Data.Value && dtFim >= p.Data.Value))
-                                                    .Sum(p=> p.Itens.Sum(q=> q.Preco * q.Quantidade));
+                                                    .Sum(p=> p.Itens.Sum(q=> q.Preco * q.Quantidade) + p.Loja.TaxaEntrega);
                 //
                 _context.Database.CommitTransaction();
             }

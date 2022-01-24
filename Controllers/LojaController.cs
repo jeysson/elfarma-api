@@ -315,6 +315,7 @@ namespace AllDelivery.Api.Controllers
             Mensageiro mensageiro = new Mensageiro(200, "Operação realizada com sucesso!");
             try
             {
+                _context.Database.BeginTransaction();
                 var us = _context.Usuarios.FirstOrDefault(p => p.Email == loja.Email && p.Loja.Id == loja.Id);
 
                 if (us == null)
@@ -327,8 +328,11 @@ namespace AllDelivery.Api.Controllers
 
                 string novasenha = GeneratePassword(8);
                 us.Senha = _passwordHasher.Hash(novasenha);
+                us.SenhaProv = true;
+                _context.Entry<Usuario>(us).Property(p => p.Senha).IsModified = true;
+                _context.Entry<Usuario>(us).Property(p => p.SenhaProv).IsModified = true;
                 _context.SaveChanges();
-
+                _context.Database.CommitTransaction();
                 SmtpClient client = new SmtpClient();
                 //
                 // Para desenvolvimento
@@ -336,7 +340,7 @@ namespace AllDelivery.Api.Controllers
                 client.Port = 587;
                 client.EnableSsl = true;
                 client.UseDefaultCredentials = false;
-                client.Credentials = new NetworkCredential("jeysson.paiva@hashtagmobile.com.br", "j3ysson@paiva");
+                client.Credentials = new NetworkCredential("suporte@elfarma.com.br", "123456s!S");
                 //
                 #region Corpo Email
                 StringBuilder str = new StringBuilder();
@@ -360,14 +364,14 @@ namespace AllDelivery.Api.Controllers
                 str.AppendLine("		<table class=\"tg\">");
                 str.AppendLine("		<thead>");
                 str.AppendLine("		  <tr>");
-                str.AppendLine("			<th class=\"tg-fo2l\"><span style=\"font-weight:bold; color:#FFF\">Appmed</span></th>");
+                str.AppendLine("			<th class=\"tg-fo2l\"><span style=\"font-weight:bold; color:#FFF\">ElFarma</span></th>");
                 str.AppendLine("			<th class=\"tg-fbuf\"></th>");
                 str.AppendLine("			<th class=\"tg-fbuf\"></th>");
                 str.AppendLine("		  </tr>");
                 str.AppendLine("		</thead>");
                 str.AppendLine("		<tbody>");
                 str.AppendLine("		  <tr>");
-                str.AppendLine("			<td class=\"tg-zv4m\" colspan=\"3\">Foi gerado uma senha provisória para seu acesso a plataforma. No seu primeiro acesso será solicitado a troca senha</td>");
+                str.AppendLine("			<td class=\"tg-zv4m\" colspan=\"3\">Seja bem vindo ao ElFarma!<br/>Foi gerada uma senha provisória para seu acesso a plataforma. No seu primeiro acesso será solicitado a troca da senha.</td>");
                 str.AppendLine("		  </tr>");
                 str.AppendLine("		  <tr>");
                 str.AppendLine("			<td class=\"tg-b420\" colspan=\"3\"><span style=\"color:#3166FF\">senha:</span></td>");
@@ -378,14 +382,14 @@ namespace AllDelivery.Api.Controllers
                 str.AppendLine("		</tbody>");
                 str.AppendLine("		</table>");
                 str.AppendLine("	</body>");
-                str.AppendLine("</htmla>");
+                str.AppendLine("</html>");
                 #endregion
                 //
                 MailMessage mailMessage = new MailMessage();
-                mailMessage.From = new MailAddress("jeysson.paiva@hashtagmobile.com.br");
+                mailMessage.From = new MailAddress("suporte@elfarma.com.br");
                 mailMessage.To.Add(loja.Email);
                 mailMessage.Body = str.ToString();
-                mailMessage.Subject = "AppMed - Senha Provisória";
+                mailMessage.Subject = "ElFarma - Senha Provisória";
                 mailMessage.IsBodyHtml = true;
                 client.Send(mailMessage);
 
@@ -394,6 +398,7 @@ namespace AllDelivery.Api.Controllers
             }
             catch(Exception ex)
             {
+                _context.Database.RollbackTransaction();
                 mensageiro.Codigo = 300;
                 mensageiro.Mensagem = ex.Message;
                 mensageiro.Dados = false;
