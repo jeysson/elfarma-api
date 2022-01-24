@@ -361,6 +361,7 @@ namespace AllDelivery.Api.Controllers
                 _context.Entry(produto).Property(p => p.Preco).IsModified = true;
                 _context.Entry(produto).Property(p => p.PrecoPromocional).IsModified = true;
                 _context.Entry(produto).Property(p => p.Ativo).IsModified = true;
+                _context.Entry(produto).Property(p => p.RetemReceita).IsModified = true;
                 //
                 _context.SaveChanges();
                 _context.Database.CommitTransaction();

@@ -42,6 +42,8 @@ namespace AllDelivery.Api
 
         public DbSet<PedidoItem> PedidoItens { get; set; }
 
+        public DbSet<PedidoReceita> PedidoReceitas { get; set; }
+
         public DbSet<HistoricoPedido> HistoricoPedidos { get; set; }
 
         public DbSet<PedidoAvaliacao> PedidoAvaliacoes { get; set; }
