@@ -458,14 +458,14 @@ namespace AllDelivery.Api.Controllers
         }
 
         [HttpGet("paginar")]
-        public async Task<List<Loja>> Paginar(int indice, int tamanho,double lat, double lon, TipoOrdenacao tipoOrdenacao)
+        public async Task<List<Loja>> Paginar(int segmento, int indice, int tamanho,double lat, double lon, TipoOrdenacao tipoOrdenacao)
         {
             Paginar<Loja> valores = null;
             //
             switch (tipoOrdenacao)
             {             
                 case TipoOrdenacao.Distancia:
-                    valores = await Paginar<Loja>.CreateAsync(_context.Lojas.OrderBy(p => p.Location.Distance(new Point(lon, lat))).Select(p=> new Loja { 
+                    valores = await Paginar<Loja>.CreateAsync(_context.Lojas.Where(p=> p.Segmento == segmento).OrderBy(p => p.Location.Distance(new Point(lon, lat))).Select(p=> new Loja { 
                         Id = p.Id,
                        // ImgLogo = p.ImgLogo,
                       //  ImgBanner = p.ImgBanner,
@@ -483,7 +483,7 @@ namespace AllDelivery.Api.Controllers
                     } ), indice, tamanho);
                     break;
                 case TipoOrdenacao.TempoEntrega:
-                    valores = await Paginar<Loja>.CreateAsync(_context.Lojas.OrderBy(p => p.TempoMinimo).Select(p => new Loja
+                    valores = await Paginar<Loja>.CreateAsync(_context.Lojas.Where(p => p.Segmento == segmento).OrderBy(p => p.TempoMinimo).Select(p => new Loja
                     {
                         Id = p.Id,
                        // ImgLogo = p.ImgLogo,
@@ -502,7 +502,7 @@ namespace AllDelivery.Api.Controllers
                     }), indice, tamanho);
                     break;
                 case TipoOrdenacao.TaxaEntrega:
-                    valores = await Paginar<Loja>.CreateAsync(_context.Lojas.OrderBy(p => p.TaxaEntrega).Select(p => new Loja
+                    valores = await Paginar<Loja>.CreateAsync(_context.Lojas.Where(p => p.Segmento == segmento).OrderBy(p => p.TaxaEntrega).Select(p => new Loja
                     {
                         Id = p.Id,
                         //ImgLogo = p.ImgLogo,
@@ -522,7 +522,7 @@ namespace AllDelivery.Api.Controllers
                     break;
                 case TipoOrdenacao.OrdemAZ:
                 default:
-                    valores = await Paginar<Loja>.CreateAsync(_context.Lojas.OrderBy(p => p.NomeFantasia).Select(p => new Loja
+                    valores = await Paginar<Loja>.CreateAsync(_context.Lojas.Where(p => p.Segmento == segmento).OrderBy(p => p.NomeFantasia).Select(p => new Loja
                     {
                         Id = p.Id,
                         //ImgLogo = p.ImgLogo,
