@@ -186,7 +186,7 @@ namespace AllDelivery.Api.Controllers
                     }
 
                     if (_passwordHasher.Check(_usuario.Senha, login.Senha))
-                    {
+                    {                       
                         ClaimsIdentity identity = new ClaimsIdentity(
                                                    new GenericIdentity(_usuario.Id.ToString(), "Login"),
                                                    new[] {
@@ -238,8 +238,10 @@ namespace AllDelivery.Api.Controllers
                         _context.Entry<Usuario>(_usuario).Property(c => c.Sobrenome).IsModified = true;
                         _context.Entry<Usuario>(_usuario).Property(c => c.Email).IsModified = true;
                         //
-
                         _context.SaveChanges();
+                        //
+                        _usuario.Loja.Tarifas = _context.LojaTarifas.Where(p => p.LojaId == _usuario.Loja.Id && p.DtInicio < DateTime.Now.Date && p.DtFim > DateTime.Now.Date).ToList();
+                        _usuario.Loja.Tarifas.ForEach(o => { o.Loja = null; });
                         //
                         mensageiro.Dados = _usuario;
                     }

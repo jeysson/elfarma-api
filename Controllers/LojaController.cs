@@ -678,6 +678,27 @@ namespace AllDelivery.Api.Controllers
             return Ok(mensageiro);
         }
 
+        [HttpGet("obtercontrato")]
+        public async Task<IActionResult> ObterContrato(uint id)
+        {
+            Mensageiro mensageiro = new Mensageiro();
+            mensageiro.Codigo = 200;
+            mensageiro.Mensagem = "Operação realizada com sucesso!";
+            try
+            {
+                _context.Database.BeginTransaction();
+                mensageiro.Dados = _context.LojaTarifas.FirstOrDefault(p => p.LojaId == id && p.DtInicio < DateTime.Now.Date && p.DtFim > DateTime.Now.Date);
+                _context.Database.CommitTransaction();
+            }
+            catch
+            {
+                mensageiro.Codigo = 300;
+                mensageiro.Mensagem = "Falha ao realizar a operação!";
+                _context.Database.RollbackTransaction();
+            }
+            return Ok(mensageiro);
+        }
+
         public string GeneratePassword(int Size)
         {
             string randomno = "abcdefghijklmnopqrstuvwyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
